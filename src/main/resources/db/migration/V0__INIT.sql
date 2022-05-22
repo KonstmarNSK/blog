@@ -1,1 +1,1 @@
-create schema blog if not exists;
+create schema if not exists blog;
