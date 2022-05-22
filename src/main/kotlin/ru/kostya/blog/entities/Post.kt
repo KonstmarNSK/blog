@@ -10,11 +10,11 @@ import javax.persistence.Table
 @Table(name = "post", schema = "blog")
 class Post (
     @Id
-    val id: Long,
+    val id: Long?,
 
     @Column(name = "title")
-    val title: String,
+    val title: String?,
 
     @Column(name="content")
-    val content: String,
+    val content: String?,
 )
