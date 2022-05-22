@@ -13,7 +13,7 @@ import java.lang.IllegalStateException
 
 @Service
 class PostService(
-    val postRepository: PostRepository
+    private val postRepository: PostRepository
 ) {
 
     @Transactional
