@@ -1,28 +1,26 @@
 package ru.kostya.blog.controllers
 
 import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseBody
-import ru.kostya.blog.dtos.post.ExistingPostData
-import ru.kostya.blog.dtos.post.PostCreationInput
-import ru.kostya.blog.dtos.post.PostCreationOutput
-import ru.kostya.blog.services.PostService
+import org.springframework.web.bind.annotation.*
+import ru.kostya.blog.operations.post.PostCreationOperation
+import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationInput
+import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationOutput
+import ru.kostya.blog.operations.post.ReadAllPostsOperation
+import ru.kostya.blog.operations.post.ReadAllPostsOperation.ExistingPostData
 
 @Controller
 @RequestMapping("/post")
 class PostController(
-    private val postService: PostService
+    private val readAllPostsOperation: ReadAllPostsOperation,
+    private val postCreationOperation: PostCreationOperation,
 ) {
 
     @GetMapping("/get-all")
     @ResponseBody
-    fun getAllPosts() : List<ExistingPostData> = postService.getAllPosts()
+    fun getAllPosts() : List<ExistingPostData> = readAllPostsOperation.process()
 
     @PostMapping("/create-new")
     @ResponseBody
     fun createNewPost(@RequestBody newPostData: PostCreationInput) : PostCreationOutput =
-        postService.createNewPost(newPostData)
+        postCreationOperation.process(newPostData)
 }

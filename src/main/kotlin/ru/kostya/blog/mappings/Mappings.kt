@@ -1,11 +1,10 @@
 package ru.kostya.blog.mappings
 
-import ru.kostya.blog.dtos.post.ExistingPostData
-import ru.kostya.blog.dtos.post.PostCreationInput
-import ru.kostya.blog.dtos.post.PostCreationOutput
 import ru.kostya.blog.dtos.post.PostId
 import ru.kostya.blog.entities.Post
-import java.lang.IllegalStateException
+import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationInput
+import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationOutput
+import ru.kostya.blog.operations.post.ReadAllPostsOperation.*
 
 fun Post.toCreationOutputDto(): PostCreationOutput =
     PostCreationOutput(
