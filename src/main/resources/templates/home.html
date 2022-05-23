@@ -4,5 +4,11 @@
         <h1>
             Homepage
         </h1>
+        <h2>
+            Links:
+        </h2>
+        <ul data-th-each="link: ${page.otherPages}">
+            <li><a data-th-href="@{${link.href}}" data-th-text="${link.text}">ссыль</a></li>
+        </ul>
     </body>
 </html>
