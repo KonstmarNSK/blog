@@ -13,6 +13,12 @@ server:
   servlet:
     context-path: /${BLOG_URL_PREFIX:blog}
 
+springdoc:
+  api-docs:
+    path: "/api-docs"
+  swagger-ui:
+    path: "/swagger"
+
 spring:
   datasource:
 
