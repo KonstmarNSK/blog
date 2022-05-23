@@ -2,7 +2,7 @@ package ru.kostya.blog.operations.post
 
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import ru.kostya.blog.dtos.post.PostId
+import ru.kostya.blog.operations.post.common.PostId
 import ru.kostya.blog.mappings.toCreationOutputDto
 import ru.kostya.blog.mappings.toPostDbEntity
 import ru.kostya.blog.repositories.PostRepository

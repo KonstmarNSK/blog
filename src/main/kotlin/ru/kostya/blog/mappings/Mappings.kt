@@ -1,6 +1,6 @@
 package ru.kostya.blog.mappings
 
-import ru.kostya.blog.dtos.post.PostId
+import ru.kostya.blog.operations.post.common.PostId
 import ru.kostya.blog.entities.Post
 import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationInput
 import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationOutput
