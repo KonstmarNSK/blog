@@ -7,9 +7,9 @@ import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationInput
 import ru.kostya.blog.operations.post.PostCreationOperation.PostCreationOutput
 import ru.kostya.blog.operations.post.ReadAllPostsOperation
 import ru.kostya.blog.operations.post.ReadAllPostsOperation.ExistingPostData
+import ru.kostya.blog.pages.CreatePostPage
 
 @Controller
-@RequestMapping("/post")
 class PostController(
     private val readAllPostsOperation: ReadAllPostsOperation,
     private val postCreationOperation: PostCreationOperation,
@@ -19,8 +19,8 @@ class PostController(
     @ResponseBody
     fun getAllPosts() : List<ExistingPostData> = readAllPostsOperation.process()
 
-    @PostMapping("/create-new")
+    @PostMapping(CreatePostPage.creationEndpoint)
     @ResponseBody
-    fun createNewPost(@RequestBody newPostData: PostCreationInput) : PostCreationOutput =
+    fun createNewPost(newPostData: PostCreationInput) : PostCreationOutput =
         postCreationOperation.process(newPostData)
 }

@@ -1,6 +1,11 @@
 package ru.kostya.blog.pages
 
-object ShowPostPage {
-    const val filePath = "post"
-    const val url = filePath
+data class ShowPostPage(
+    val title: String,
+    val content: String,
+) {
+    companion object {
+        const val filePath = "post"
+        const val url = filePath
+    }
 }
