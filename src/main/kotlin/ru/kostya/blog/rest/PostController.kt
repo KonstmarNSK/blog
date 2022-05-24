@@ -1,4 +1,4 @@
-package ru.kostya.blog.controllers
+package ru.kostya.blog.rest
 
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.*

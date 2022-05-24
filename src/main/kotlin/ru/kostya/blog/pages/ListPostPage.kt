@@ -1,6 +1,6 @@
 package ru.kostya.blog.pages
 
-import ru.kostya.blog.controllers.utils.LinkData
+import ru.kostya.blog.pages.utils.LinkData
 
 data class ListPostPage(val postLinks: List<LinkData>) {
     companion object {
