@@ -2,7 +2,7 @@
 services:
   web:
     build:
-      context: .
+      context: ./backend
       args:
           DEBUG_BUILD: "true"
           DEBUG_PORT: "9054"

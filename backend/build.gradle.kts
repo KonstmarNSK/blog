@@ -16,8 +16,13 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 repositories {
 	mavenCentral()
 }
+//
+//tasks.getByName<Copy>("processResources"){
+//	from("${rootDir.absolutePath}/frontend/build")
+//}
 
 dependencies {
+//	runtimeOnly(project(":frontend"))
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-rest")
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
