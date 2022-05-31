@@ -1,12 +1,18 @@
-import org.gradle.internal.enterprise.test.FileProperty
 import java.lang.ProcessBuilder.Redirect
+import java.nio.file.Files
+import java.nio.file.LinkOption
+
 
 group = "ru.kostya"
 version = "0.0.1-SNAPSHOT"
 
 
-val buildDir = File(layout.projectDirectory.asFile, "build")
-val elmStuffDir = File(layout.projectDirectory.asFile, "elm-stuff")
+val buildDirParam = File(projectDir, "build")
+val elmStuffDirParam = File(projectDir, "elm-stuff")
+val pathToElmExecutableParam = "elm"
+val maxBuildTimeSecondsParam = 300L
+
+buildDir = buildDirParam
 
 abstract class BuildFrontend : DefaultTask() {
     @get:Input
@@ -26,14 +32,14 @@ abstract class BuildFrontend : DefaultTask() {
         val maxBuildTimeSeconds = maxBuildTimeSeconds.get()
         val pathToElmExecutable = pathToElmExecutable.get()
         val elmRootDirectory = elmRootDirectory.get().asFile
-        val outputDir = outputDir.get()
+        val outputDir = outputDir.get().asFile
 
         println("maxBuildTimeSeconds is $maxBuildTimeSeconds")
         println("pathToElmExecutable is $pathToElmExecutable")
         println("elmRootDirectory is ${elmRootDirectory.absolutePath}")
-        println("outputDir is ${outputDir.asFile.absolutePath}")
+        println("outputDir is ${outputDir.absolutePath}")
 
-        val cmdsList = File(elmRootDirectory, "src")
+        File(elmRootDirectory, "src")
             .listFiles()
             ?.filter { it.extension == "elm" }
             ?.map {
@@ -44,7 +50,7 @@ abstract class BuildFrontend : DefaultTask() {
                      make 
                     ${it.absolutePath}
                      --output 
-                    ${outputDir.asFile.absolutePath}/${it.nameWithoutExtension}.js
+                    ${outputDir.absolutePath}/${it.nameWithoutExtension}.js
                 
                 """.trimIndent()
                     .replace(System.lineSeparator(), "")
@@ -69,28 +75,36 @@ abstract class BuildFrontend : DefaultTask() {
 abstract class CleanFrontend : DefaultTask() {
 
     @get:Input
-    abstract val filesToRemove: Property<List<File>>
+    abstract var filesToRemove: List<File>
 
     @TaskAction
     fun doClean() {
-        println("Will delete: \n ${filesToRemove.get().joinToString(",\n") { it.absolutePath }}")
-        filesToRemove.get().forEach{it.delete()}
+        println("Will delete: \n ${filesToRemove.joinToString(",\n") { it.absolutePath }}")
+
+        filesToRemove.forEach{deleteDirectory(it.toPath())}
+    }
+
+
+    private fun deleteDirectory(path: java.nio.file.Path) {
+        if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+            Files.newDirectoryStream(path).use { entries ->
+                for (entry in entries) {
+                    deleteDirectory(entry)
+                }
+            }
+        }
+        Files.deleteIfExists(path)
     }
 }
 
 
-
-
-
-
-
-
-tasks.register<BuildFrontend>("build-frontend") {
-    maxBuildTimeSeconds.set(300)
-    outputDir.set(File(layout.projectDirectory.asFile, "build"))
-    pathToElmExecutable.set("elm")
+tasks.register<BuildFrontend>("build") {
+    maxBuildTimeSeconds.set(maxBuildTimeSecondsParam)
+    outputDir.set(buildDirParam)
+    pathToElmExecutable.set(pathToElmExecutableParam)
     elmRootDirectory.set(layout.projectDirectory)
 }
 
-tasks.register<CleanFrontend>("clean")
-
+tasks.register<CleanFrontend>("clean"){
+    filesToRemove = listOf(buildDirParam, elmStuffDirParam)
+}
