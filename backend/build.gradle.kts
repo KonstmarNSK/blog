@@ -53,6 +53,10 @@ tasks.getByName<BootJar>("bootJar") {
     archiveFileName.set("executable-blog-${archiveVersion.get()}.jar")
 }
 
+
+
+// frontend
+
 tasks.register<Copy>("copy-front"){
     dependsOn(project(":frontend").tasks.findByName("build"))
 

@@ -1,5 +1,8 @@
 <html lang="en">
+<head>
     <title>Home</title>
+    <script type="text/javascript" data-th-src="@{Main.js}"></script>
+</head>
     <body>
         <h1>
             Homepage
@@ -10,5 +13,19 @@
         <ul data-th-each="link: ${page.otherPages}">
             <li><a data-th-href="@{${link.href}}" data-th-text="${link.text}">ссыль</a></li>
         </ul>
+
+        <div id="myapp"></div>
+
+        <script data-th-inline="javascript" type="text/javascript">
+            /*<![CDATA[*/
+            var postsLinksGetUrl = /*[[@{${page.postsListGetUrl}}]]*/ '<nothing>';
+            /*]]>*/
+
+            // Start the Elm application.
+            Elm.Main.init({
+                node: document.getElementById('myapp'),
+                flags: postsLinksGetUrl
+            });
+        </script>
     </body>
 </html>

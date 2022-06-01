@@ -25,7 +25,7 @@ class PagesController(
 
     @GetMapping(HomePage.url)
     fun homePage(model: Model): String {
-        model.addAttribute(PAGE_ATTR_NAME, HomePage)
+        model.addAttribute(PAGE_ATTR_NAME, HomePage(postsListGetUrl = "/get-all"))
         return HomePage.filePath
     }
 
