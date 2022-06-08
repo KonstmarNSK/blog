@@ -1,31 +1,39 @@
 <html lang="en">
 <head>
     <title>Home</title>
+    <link data-th-href="@{bootstrap.css}" rel="stylesheet">
     <script type="text/javascript" data-th-src="@{Main.js}"></script>
 </head>
     <body>
-        <h1>
-            Homepage
-        </h1>
-        <h2>
-            Links:
-        </h2>
-        <ul data-th-each="link: ${page.otherPages}">
-            <li><a data-th-href="@{${link.href}}" data-th-text="${link.text}">ссыль</a></li>
-        </ul>
 
         <div id="myapp"></div>
 
         <script data-th-inline="javascript" type="text/javascript">
             /*<![CDATA[*/
-            var postsLinksGetUrl = /*[[@{${page.postsListGetUrl}}]]*/ '<nothing>';
+            const properties = {
+                createPostComponent : {
+                    createPostUrl : /*[[@{${page.createPostComponent.createPostUrl}}]]*/ '<no-url>',
+                    createPostMethod: /*[[@{${page.createPostComponent.createPostMethod}}]]*/ '<no-method>',
+                },
+
+                getAllPostsComponent : {
+                    getAllPostsUrl:  /*[[@{${page.getAllPostsComponent.getAllPostsUrl}}]]*/ '<no-url>',
+                    getAllPostsMethod: /*[[@{${page.getAllPostsComponent.getAllPostsMethod}}]]*/ '<no-method>',
+                },
+
+                readSpecificPostComponent : {
+                    postReadUrl:  /*[[@{${page.readSpecificPostComponent.postReadUrl}}]]*/ '<no-url>',
+                    readPostMethod: /*[[@{${page.readSpecificPostComponent.readPostMethod}}]]*/ '<no-method>',
+                },
+            }
             /*]]>*/
 
             // Start the Elm application.
             Elm.Main.init({
                 node: document.getElementById('myapp'),
-                flags: postsLinksGetUrl
+                flags: properties
             });
+
         </script>
     </body>
 </html>
