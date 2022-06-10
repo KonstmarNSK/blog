@@ -23,4 +23,4 @@ defaultFlags = F.Flags
     (F.ReadSpecificPostComponent "a" "b")
 
 defaultInit: () -> (Model.Model, Cmd Message)
-defaultInit _ = (Model.defaultModel defaultFlags, Cmd.none)
+defaultInit _ = (Model.Model, Cmd.none)
