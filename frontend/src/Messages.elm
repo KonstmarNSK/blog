@@ -9,7 +9,11 @@ type Message =
 
 -- Messages that sidebar items produce
 type SidebarMsg =
-    SidebarItemClicked
+    SidebarItemClicked ShowSubpage
+
+type ShowSubpage =
+    --LoadedPage String modelType
+    NotLoadedPage String String
 
 
 

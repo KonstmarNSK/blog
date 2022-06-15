@@ -5,9 +5,10 @@ import Pages.MainPage as MP
 
 
 type Model =
-      Correct { mainPageModel: MP.MainPageModel }
+      Correct CorrectModel
     | Incorrect Error
 
+type alias CorrectModel = { mainPageModel: MP.MainPageModel }
 
 type Error =
     IncorrectFlags String

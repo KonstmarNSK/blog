@@ -1,11 +1,11 @@
 module Pages.MainPage exposing (..)
 
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Font as Font
-import Json.Decode as Decode exposing (Decoder, int)
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (optional, required)
 import Messages exposing (Message)
+import PageParts.Common
 import PageParts.Sidebar exposing (sidebar, SidebarModel, SidebarEntry)
 import Pages.CreatePost as CP exposing (PostCreationPageModel)
 
@@ -13,23 +13,49 @@ import Pages.CreatePost as CP exposing (PostCreationPageModel)
 
 --      MODEL
 
+type alias PageName = String
+type alias PageUrl = String
+
 type alias MainPageModel = {
         activeSubpage: SubpageModel
+       ,inactiveSubpages: List InactiveSubpage
+       ,clicked: String
     }
 
+type InactiveSubpage =
+     UrlOnly PageName PageUrl   -- contains its name and url which can be used to retrieve its data
+   | AlreadyLoaded PageName SubpageModel
 
-draw: MainPageModel -> Element Messages.Message
-draw _ =
+
+update: MainPageModel -> Message -> (MainPageModel, Cmd Message)
+update mainPageModel message =
+    case message of
+        Messages.SidebarMsg (Messages.SidebarItemClicked (Messages.NotLoadedPage pageId pageUrl))  ->
+            ({mainPageModel | clicked = "clicked on " ++ pageId ++ ", url is " ++ pageUrl}, Cmd.none)
+
+
+draw: MainPageModel -> Element Message
+draw model =
     let
-        sidebarModel = SidebarModel [
-                SidebarEntry "sb-entr-1" "First" []
-               ,SidebarEntry "sb-entr-2" "Second" []
-               ,SidebarEntry "sb-entr-3" "Third" []
-            ]
+        -- takes id of HTML element corresponding to this sidebar entry + entry itself
+        inactiveSubpageToSidebarEntry: Int -> InactiveSubpage -> SidebarEntry Message
+        inactiveSubpageToSidebarEntry elementId subpage =
+            let strId = String.fromInt elementId in
+            case subpage of
+                UrlOnly name url -> SidebarEntry strId name [
+                        PageParts.Common.onClick <| Messages.SidebarMsg <| Messages.SidebarItemClicked <|Messages.NotLoadedPage strId url
+                    ] -- todo: url must be passed to produced event
+                AlreadyLoaded name m -> SidebarEntry strId name []
+
+        sidebarModel =
+           SidebarModel
+                (List.indexedMap inactiveSubpageToSidebarEntry model.inactiveSubpages)
+
     in
     row [ width <| minimum 600 fill, height fill, Font.size 16 ]
                     [
                         sidebar sidebarModel
+                       ,text model.clicked
                     ]
 
 type SubpageModel =
@@ -49,7 +75,14 @@ initModel mainPageFlagsPart =
     let
         activeSubpage = ViewPostModel
     in
-    (MainPageModel activeSubpage, Cmd.none)
+    (
+        MainPageModel
+            activeSubpage
+            (List.map (\subpage -> UrlOnly subpage.subpageName subpage.subpageUrl) mainPageFlagsPart.inactiveSubpages)
+            "None"
+
+        , Cmd.none
+    )
 
 
 
@@ -57,6 +90,12 @@ initModel mainPageFlagsPart =
 
 type alias MainPageFlagsPart = {
         activeSubpageData: ActiveSubpageInitData
+       ,inactiveSubpages: List InactiveSubpageInitData
+    }
+
+type alias InactiveSubpageInitData = {
+       subpageName: String
+      ,subpageUrl: String
     }
 
 type alias ActiveSubpageInitData = {
@@ -83,10 +122,17 @@ decodeActiveSubpageInitData =
           |> required "subpageInitParams" decodeCreatePostPageInitParams
 
 
+decodeInactiveSubpageInitData: Decoder InactiveSubpageInitData
+decodeInactiveSubpageInitData =
+    Decode.succeed InactiveSubpageInitData
+          |> required "subpageName" Decode.string
+          |> required "subpageUrl" Decode.string
+
 getDataFromFlags: Decoder MainPageFlagsPart
 getDataFromFlags =
     Decode.succeed MainPageFlagsPart
         |> required "activeSubpageData" decodeActiveSubpageInitData
+        |> optional "inactiveSubpages" (Decode.list decodeInactiveSubpageInitData) []
 
 
 --      ERRORS

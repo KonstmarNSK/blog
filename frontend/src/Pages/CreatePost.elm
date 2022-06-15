@@ -1,8 +1,8 @@
 module Pages.CreatePost exposing (..)
 
-import Dict exposing (Dict)
 import Element exposing (..)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline
 import Messages
 
 
@@ -28,14 +28,14 @@ draw _ =
 --      READ DATA FROM FLAGS
 
 type alias PageInitParams = {
-
+        createPostSubmitUrl: String
     }
 
 
 getDataFromFlags: Decoder PageInitParams
 getDataFromFlags =
     Decode.succeed PageInitParams
-
+        |> Json.Decode.Pipeline.required "createPostSubmitUrl" Decode.string
 
 
 

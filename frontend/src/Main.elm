@@ -31,7 +31,7 @@ init flags =
                                     (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
 
                         Err e ->
-                            (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! ", Cmd.none)
+                            (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! " ++ (Json.Decode.errorToString e) , Cmd.none)
 
 
 
@@ -41,7 +41,14 @@ init flags =
 update : Message -> Model.Model -> (Model.Model, Cmd Message)
 update msg model =
   case msg of
-    SidebarMsg _ -> (model, Cmd.none)
+    SidebarMsg _ ->
+        case model of
+            Model.Correct mpModel ->
+                case MP.update mpModel.mainPageModel msg of
+                    (m, c) ->
+                        (Model.Correct {mpModel | mainPageModel = m }, c)
+
+            _ ->        (model, Cmd.none)
 
 
 

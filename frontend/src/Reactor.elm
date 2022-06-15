@@ -2,11 +2,10 @@ module Reactor exposing (..)
 
 import Browser
 import Flags as F exposing (Flags)
-import Json.Encode as Encode
+import Json.Encode as Encode exposing (..)
 import Messages exposing (Message)
 import Model
 import Main exposing (..)
-import Dict exposing (Dict)
 
 main = mainForReactor
 
@@ -19,15 +18,27 @@ mainForReactor =
     , subscriptions = subscriptions
     }
 
-defaultFlags = Encode.object [
-    ( "activeSubpageData", Encode.object [
-        ("subpageName", Encode.string "Create post!")
-       ,("subpageInitParams", Encode.object [
-                -- nothing
+defaultFlags = object [
+    ( "activeSubpageData", object [
+        ("subpageName", string "Create post!")
+       ,("subpageInitParams", object [
+                ("createPostSubmitUrl", string "some http url")
        ])
     ])
+    ,
+    ("inactiveSubpages", list object [
+            [
+                ("subpageName", (string "View post"))
+               ,("subpageUrl", string "some-url-1")
+            ]
+            ,
+            [
+                ("subpageName", (string "Show all posts"))
+               ,("subpageUrl", string "some-url-2")
+            ]
+        ])
   ]
 
 
 defaultInit: Flags -> (Model.Model, Cmd Message)
-defaultInit flags = Main.init flags
+defaultInit _ = Main.init defaultFlags
