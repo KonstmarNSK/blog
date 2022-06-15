@@ -3,11 +3,11 @@ module Main exposing (..)
 import Browser
 import Element exposing (fill, height, layout, width)
 import Html exposing (..)
+import Json.Decode
 import Messages exposing (Message(..))
 import Pages.MainPage as MP
 
 import Model
-import Flags exposing (..)
 
 
 -- MAIN
@@ -21,15 +21,17 @@ main =
     }
 
 
-init : Flags -> (Model.Model, Cmd Message)
+init : Json.Decode.Value -> (Model.Model, Cmd Message)
 init flags =
-  (
-    Model.Model,
-    Cmd.none
-  )
+    let
+        decodedFlags = Json.Decode.decodeValue MP.getDataFromFlags flags
+    in
+        case decodedFlags of
+                        Ok val -> case MP.initModel val of
+                                    (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
 
-
-
+                        Err e ->
+                            (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! ", Cmd.none)
 
 
 
@@ -65,5 +67,17 @@ subscriptions _ =
 
 view : Model.Model -> Html Message
 view model =
+    let
+       drawErr error =
+            Element.el [] (Element.text <| Model.errToString error)
+
+       body = case model of
+           Model.Correct m -> MP.draw m.mainPageModel
+           Model.Incorrect err -> drawErr err
+    in
     layout [ width fill, height fill ] <|
-        MP.draw MP.MainPageModel
+        body
+
+
+
+
