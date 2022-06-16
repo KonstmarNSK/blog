@@ -16,16 +16,82 @@ import Pages.CreatePost as CP exposing (PostCreationPageModel)
 type alias PageName = String
 type alias PageUrl = String
 
+
 type alias MainPageModel = {
-        activeSubpage: SubpageModel
+        activeSubpage: ActiveSubpageData
        ,inactiveSubpages: List InactiveSubpage
        ,clicked: String
     }
+
 
 type InactiveSubpage =
      UrlOnly PageName PageUrl   -- contains its name and url which can be used to retrieve its data
    | AlreadyLoaded PageName SubpageModel
 
+
+type alias ActiveSubpageData = {
+        page: SubpageModel
+       ,pageName: String
+    }
+
+
+
+type SubpageModel =
+      CreatePostModel PostCreationPageModel
+    | ViewPostModel
+    | ShowAllPostsModel
+
+
+
+
+
+--      INIT
+
+
+initModel: MainPageInitParams -> Result Error (MainPageModel, Cmd Message)
+initModel mainPageInitParams =
+    let
+        activeSubpageName = mainPageInitParams.activeSubpageData.subpageName
+
+        activeSubpage: Result Error ActiveSubpageData
+        activeSubpage =
+            case mainPageInitParams.activeSubpageData.subpageInitParams of
+                CreatePostPageInitParams cpInitParams ->
+                    initCPActivePage cpInitParams
+
+
+
+        initCPActivePage: CP.PageInitParams -> Result Error ActiveSubpageData
+        initCPActivePage cpInitParams =
+            case CP.initModel activeSubpageName cpInitParams of
+                                    Ok cpModel -> Ok
+                                        <| ActiveSubpageData
+                                            (CreatePostModel cpModel)
+                                            activeSubpageName
+
+                                    Err cpErr -> Err
+                                        <| ModelInitErr
+                                        <| "Failed to create model of page 'Create post': " ++ CP.errToString cpErr
+    in
+
+        case activeSubpage of
+            Ok subpage ->
+                Ok <| (
+                    MainPageModel
+                        subpage
+                        (List.map (\sp -> UrlOnly sp.subpageName sp.subpageUrl) mainPageInitParams.inactiveSubpages)
+                        "None"
+
+                    , Cmd.none
+                )
+
+            Err e -> Err e
+
+
+
+
+
+--      UPDATE
 
 update: MainPageModel -> Message -> (MainPageModel, Cmd Message)
 update mainPageModel message =
@@ -34,22 +100,45 @@ update mainPageModel message =
             ({mainPageModel | clicked = "clicked on " ++ pageId ++ ", url is " ++ pageUrl}, Cmd.none)
 
 
-draw: MainPageModel -> Element Message
-draw model =
+
+
+
+
+--      VIEW
+
+
+view: MainPageModel -> Element Message
+view model =
     let
         -- takes id of HTML element corresponding to this sidebar entry + entry itself
-        inactiveSubpageToSidebarEntry: Int -> InactiveSubpage -> SidebarEntry Message
-        inactiveSubpageToSidebarEntry elementId subpage =
-            let strId = String.fromInt elementId in
-            case subpage of
-                UrlOnly name url -> SidebarEntry strId name [
-                        PageParts.Common.onClick <| Messages.SidebarMsg <| Messages.SidebarItemClicked <|Messages.NotLoadedPage strId url
-                    ] -- todo: url must be passed to produced event
-                AlreadyLoaded name m -> SidebarEntry strId name []
+        inactiveSubpageToSidebarEntry: InactiveSubpage -> (String -> SidebarEntry Message)
+        inactiveSubpageToSidebarEntry subpage =
+            \strId ->
+                case subpage of
+                    UrlOnly name url -> SidebarEntry strId name [
+                            PageParts.Common.onClick <| Messages.SidebarMsg <| Messages.SidebarItemClicked <|Messages.NotLoadedPage strId url
+                        ] -- todo: url must be passed to produced event
+                    AlreadyLoaded name m -> SidebarEntry strId name []
+
+
+        activeSubpageToSidebarEntry: ActiveSubpageData -> (String -> SidebarEntry Message)
+        activeSubpageToSidebarEntry subpage =
+            \strId ->
+                SidebarEntry strId subpage.pageName []
+
+
+        collectSidebarItems =
+           List.indexedMap
+                (\idx sbi -> sbi <| "sidebar-entry-" ++ String.fromInt idx)
+                <| (
+                        List.map inactiveSubpageToSidebarEntry model.inactiveSubpages
+                        ++
+                        [ activeSubpageToSidebarEntry model.activeSubpage ]
+                   )
+
 
         sidebarModel =
-           SidebarModel
-                (List.indexedMap inactiveSubpageToSidebarEntry model.inactiveSubpages)
+           SidebarModel collectSidebarItems
 
     in
     row [ width <| minimum 600 fill, height fill, Font.size 16 ]
@@ -58,37 +147,14 @@ draw model =
                        ,text model.clicked
                     ]
 
-type SubpageModel =
-      CreatePostModel String PostCreationPageModel
-    | ViewPostModel
-    | ShowAllPostsModel
 
 
-type alias ActivePageData = {
-        page: SubpageModel
-       ,pageName: String
-    }
-
-
-initModel: MainPageFlagsPart -> (MainPageModel, Cmd Message)
-initModel mainPageFlagsPart =
-    let
-        activeSubpage = ViewPostModel
-    in
-    (
-        MainPageModel
-            activeSubpage
-            (List.map (\subpage -> UrlOnly subpage.subpageName subpage.subpageUrl) mainPageFlagsPart.inactiveSubpages)
-            "None"
-
-        , Cmd.none
-    )
 
 
 
 --      READ DATA FROM FLAGS
 
-type alias MainPageFlagsPart = {
+type alias MainPageInitParams = {
         activeSubpageData: ActiveSubpageInitData
        ,inactiveSubpages: List InactiveSubpageInitData
     }
@@ -107,6 +173,8 @@ type SubpageInitParams =
           CreatePostPageInitParams CP.PageInitParams
 
 
+
+--      DECODERS
 
 -- create a decoder for each of SubpageInitParams
 decodeCreatePostPageInitParams: Decoder SubpageInitParams
@@ -128,11 +196,13 @@ decodeInactiveSubpageInitData =
           |> required "subpageName" Decode.string
           |> required "subpageUrl" Decode.string
 
-getDataFromFlags: Decoder MainPageFlagsPart
+getDataFromFlags: Decoder MainPageInitParams
 getDataFromFlags =
-    Decode.succeed MainPageFlagsPart
+    Decode.succeed MainPageInitParams
         |> required "activeSubpageData" decodeActiveSubpageInitData
         |> optional "inactiveSubpages" (Decode.list decodeInactiveSubpageInitData) []
+
+
 
 
 --      ERRORS

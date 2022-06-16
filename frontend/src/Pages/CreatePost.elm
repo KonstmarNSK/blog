@@ -18,8 +18,8 @@ initModel string properties =
     Ok PostCreationPageModel
 
 
-draw: PostCreationPageModel -> Element Messages.Message
-draw _ =
+view: PostCreationPageModel -> Element Messages.Message
+view _ =
     el [] ( text "Me CreatePost Page!" )
 
 

@@ -24,14 +24,18 @@ main =
 init : Json.Decode.Value -> (Model.Model, Cmd Message)
 init flags =
     let
+        -- let MainPage decode its initial parameters
         decodedFlags = Json.Decode.decodeValue MP.getDataFromFlags flags
     in
         case decodedFlags of
-                        Ok val -> case MP.initModel val of
-                                    (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
+            Ok val -> case MP.initModel val of
+                        Ok (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
+                        Err e -> (Model.Incorrect <| Model.IncorrectFlags <| MP.errToString e, Cmd.none)
 
-                        Err e ->
-                            (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! " ++ (Json.Decode.errorToString e) , Cmd.none)
+            Err e ->
+                (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! " ++ (Json.Decode.errorToString e) , Cmd.none)
+
+
 
 
 
@@ -41,12 +45,13 @@ init flags =
 update : Message -> Model.Model -> (Model.Model, Cmd Message)
 update msg model =
   case msg of
+    -- todo: all mainPage messages must be contained in some root MainPage message variant
     SidebarMsg _ ->
         case model of
-            Model.Correct mpModel ->
-                case MP.update mpModel.mainPageModel msg of
+            Model.Correct correctModel ->
+                case MP.update correctModel.mainPageModel msg of
                     (m, c) ->
-                        (Model.Correct {mpModel | mainPageModel = m }, c)
+                        (Model.Correct {correctModel | mainPageModel = m }, c)
 
             _ ->        (model, Cmd.none)
 
@@ -79,7 +84,7 @@ view model =
             Element.el [] (Element.text <| Model.errToString error)
 
        body = case model of
-           Model.Correct m -> MP.draw m.mainPageModel
+           Model.Correct m -> MP.view m.mainPageModel
            Model.Incorrect err -> drawErr err
     in
     layout [ width fill, height fill ] <|
