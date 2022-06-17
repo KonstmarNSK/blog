@@ -4,6 +4,7 @@ import Element exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline
 import Messages
+import Pages.FromJson.CreatePostPage exposing (PageInitParams)
 
 
 --      MODEL
@@ -23,19 +24,6 @@ view _ =
     el [] ( text "Me CreatePost Page!" )
 
 
-
-
---      READ DATA FROM FLAGS
-
-type alias PageInitParams = {
-        createPostSubmitUrl: String
-    }
-
-
-getDataFromFlags: Decoder PageInitParams
-getDataFromFlags =
-    Decode.succeed PageInitParams
-        |> Json.Decode.Pipeline.required "createPostSubmitUrl" Decode.string
 
 
 

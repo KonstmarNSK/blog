@@ -5,6 +5,7 @@ import Element exposing (fill, height, layout, width)
 import Html exposing (..)
 import Json.Decode
 import Messages exposing (Message(..))
+import Pages.FromJson.MainPage as MP
 import Pages.MainPage as MP
 
 import Model
@@ -29,8 +30,8 @@ init flags =
     in
         case decodedFlags of
             Ok val -> case MP.initModel val of
-                        Ok (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
-                        Err e -> (Model.Incorrect <| Model.IncorrectFlags <| MP.errToString e, Cmd.none)
+                Ok (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
+                Err e -> (Model.Incorrect <| Model.IncorrectFlags <| MP.errToString e, Cmd.none)
 
             Err e ->
                 (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! " ++ (Json.Decode.errorToString e) , Cmd.none)
@@ -45,8 +46,7 @@ init flags =
 update : Message -> Model.Model -> (Model.Model, Cmd Message)
 update msg model =
   case msg of
-    -- todo: all mainPage messages must be contained in some root MainPage message variant
-    SidebarMsg _ ->
+    MPMessage _ ->
         case model of
             Model.Correct correctModel ->
                 case MP.update correctModel.mainPageModel msg of

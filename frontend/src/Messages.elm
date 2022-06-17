@@ -1,15 +1,22 @@
 module Messages exposing (..)
 
 
--- Update accepts this type
+import Http
+import Pages.FromJson.MainPage exposing (SubpageInitParams)
+
+
 type Message =
-   SidebarMsg SidebarMsg
+   MPMessage MainPageMessage
+
+type alias LoadedPageId = String
+
+type MainPageMessage =
+    LoadedPageInfo LoadedPageId (Result Http.Error SubpageInitParams)
+  | SidebarItemClicked ClickedItemType
 
 
-
--- Messages that sidebar items produce
-type SidebarMsg =
-    SidebarItemClicked ShowSubpage
+type ClickedItemType =
+    PageLinkClicked ShowSubpage
 
 type ShowSubpage =
     --LoadedPage String modelType
