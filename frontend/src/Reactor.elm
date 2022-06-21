@@ -1,44 +1,45 @@
 module Reactor exposing (..)
 
-import Browser
+import Browser exposing (UrlRequest)
+import Browser.Navigation as Navigation
 import Flags as F exposing (Flags)
 import Json.Encode as Encode exposing (..)
-import Messages exposing (Message)
+import Messages exposing (MainPageMessage(..), Message)
 import Model
 import Main exposing (..)
+import Url exposing (Url)
 
 main = mainForReactor
 
 -- mainForReactor, defaultFlags and defaultInit are needed for launch via 'elm reactor' (entry point is Reactor.elm)
 mainForReactor =
-  Browser.element
+  Browser.application
     { init = defaultInit
     , view = view
     , update = update
     , subscriptions = subscriptions
+    , onUrlRequest = \url -> Messages.MPMessage <| LinkClicked url
+    , onUrlChange = \url -> Messages.MPMessage <| UrlChanged url
     }
 
 defaultFlags = object [
-    ( "activeSubpageData", object [
-        ("subpageName", string "Create post!")
-       ,("subpageInitParams", object [
-                ("createPostSubmitUrl", string "some http url")
-       ])
+    ("sidebar-links", list object [
+        [
+            ("text", string "Create post")
+           ,("url", string "some-create-post-url")
+        ],
+
+        [
+            ("text", string "View post")
+           ,("url", string "some-view-post-url")
+        ],
+
+        [
+            ("text", string "View all posts")
+           ,("url", string "some-view-all-posts-url")
+        ]
     ])
-    ,
-    ("inactiveSubpages", list object [
-            [
-                ("subpageName", (string "View post"))
-               ,("subpageUrl", string "some-url-1")
-            ]
-            ,
-            [
-                ("subpageName", (string "Show all posts"))
-               ,("subpageUrl", string "some-url-2")
-            ]
-        ])
   ]
 
-
-defaultInit: Flags -> (Model.Model, Cmd Message)
-defaultInit _ = Main.init defaultFlags
+defaultInit: Flags -> Url -> Navigation.Key  -> (Model.Model, Cmd Message)
+defaultInit _ url key  = Main.init defaultFlags url key

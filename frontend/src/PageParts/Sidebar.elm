@@ -1,4 +1,4 @@
-module PageParts.Sidebar exposing (sidebar, SidebarEntry, SidebarModel)
+module PageParts.Sidebar exposing (sidebar, SidebarLink, SidebarModel)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -10,15 +10,15 @@ import PageParts.Common as C
 
 
 
-type alias SidebarEntry msgType = {
-        id: String       -- id of its HTML element
+type alias SidebarLink msgType = {
+       url: String
        ,name: String     -- string that wll appear in the sidebar
        ,producingEvents: List (C.ElementEvent msgType)  -- events that this entry will produce
     }
 
 
 type alias SidebarModel msg = {
-        entries: List (SidebarEntry msg)
+        entries: List (SidebarLink msg)
     }
 
 
@@ -26,11 +26,11 @@ type alias SidebarModel msg = {
 sidebar: SidebarModel Message -> Element Message
 sidebar model =
     let
-        entry: SidebarEntry Message-> Element Message
-        entry e =
+        links: SidebarLink Message-> Element Message
+        links e =
             el
                 ([] ++ List.map C.toAttribute e.producingEvents)
-                (text <| e.name)
+                (link [] { url = e.url, label = (text e.name)} )
 
     in
     column
@@ -42,6 +42,6 @@ sidebar model =
             , Font.color <| rgb255 0xFF 0xFF 0xFF
             ]
         <|
-            List.map entry model.entries
+            List.map links model.entries
 
 

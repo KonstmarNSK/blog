@@ -1,35 +1,38 @@
 module Main exposing (..)
 
-import Browser
+import Browser exposing (Document, UrlRequest)
 import Element exposing (fill, height, layout, width)
-import Html exposing (..)
+import Browser.Navigation as Nav
 import Json.Decode
-import Messages exposing (Message(..))
+import Messages exposing (MainPageMessage(..), Message(..))
 import Pages.FromJson.MainPage as MP
 import Pages.MainPage as MP
 
 import Model
+import Url exposing (Url)
 
 
 -- MAIN
 
 main =
-  Browser.element
+  Browser.application
     { init = init
     , view = view
     , update = update
     , subscriptions = subscriptions
+    , onUrlRequest = \url -> Messages.MPMessage <| LinkClicked url
+    , onUrlChange = \url -> Messages.MPMessage <| UrlChanged url
     }
 
 
-init : Json.Decode.Value -> (Model.Model, Cmd Message)
-init flags =
+init : Json.Decode.Value -> Url.Url -> Nav.Key -> (Model.Model, Cmd Message)
+init flags url _ =
     let
         -- let MainPage decode its initial parameters
         decodedFlags = Json.Decode.decodeValue MP.getDataFromFlags flags
     in
         case decodedFlags of
-            Ok val -> case MP.initModel val of
+            Ok val -> case MP.initModel val url of
                 Ok (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
                 Err e -> (Model.Incorrect <| Model.IncorrectFlags <| MP.errToString e, Cmd.none)
 
@@ -38,25 +41,20 @@ init flags =
 
 
 
-
-
 -- UPDATE
 
 
 update : Message -> Model.Model -> (Model.Model, Cmd Message)
 update msg model =
-  case msg of
-    MPMessage _ ->
         case model of
             Model.Correct correctModel ->
-                case MP.update correctModel.mainPageModel msg of
-                    (m, c) ->
-                        (Model.Correct {correctModel | mainPageModel = m }, c)
+                case msg of
+                    MPMessage mpMessage ->
+                        case MP.update correctModel.mainPageModel mpMessage of
+                            (m, c) ->
+                                (Model.Correct {correctModel | mainPageModel = m }, c)
 
-            _ ->        (model, Cmd.none)
-
-
-
+            _ -> (model, Cmd.none)
 
 
 
@@ -77,7 +75,7 @@ subscriptions _ =
 -- VIEW
 
 
-view : Model.Model -> Html Message
+view : Model.Model -> Document Message
 view model =
     let
        drawErr error =
@@ -87,8 +85,11 @@ view model =
            Model.Correct m -> MP.view m.mainPageModel
            Model.Incorrect err -> drawErr err
     in
-    layout [ width fill, height fill ] <|
-        body
+
+    Document "SomeTitle" [
+        layout [ width fill, height fill ] <|
+            body
+    ]
 
 
 
