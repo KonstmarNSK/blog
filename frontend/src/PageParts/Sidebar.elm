@@ -29,13 +29,13 @@ sidebar model =
         links: SidebarLink Message-> Element Message
         links e =
             el
-                ([] ++ List.map C.toAttribute e.producingEvents)
+                ([paddingXY 20 10] ++ List.map C.toAttribute e.producingEvents)
                 (link [] { url = e.url, label = (text e.name)} )
 
     in
     column
             [ height fill
-            , width <| maximum 250 <| fillPortion 1
+            , width <| maximum 200 <| fillPortion 1
             , paddingXY 0 10
             , scrollbarY
             , Background.color <| rgb255 0x2E 0x34 0x36

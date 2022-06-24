@@ -1,28 +1,28 @@
 module Pages.CreatePost exposing (..)
 
 import Element exposing (..)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline
 import Messages
 import Pages.FromJson.CreatePostPage exposing (PageInitParams)
+import Url exposing (Url)
+import Pages.PagesModels.CreatePostPageModel exposing (PostCreationPageModel)
 
 
 --      MODEL
 
-type alias PostCreationPageModel = {
-
- }
-
-
 initModel: String -> PageInitParams -> Result Error PostCreationPageModel
 initModel string properties =
-    Ok PostCreationPageModel
+    Ok <| PostCreationPageModel "create-page-url"
 
 
 view: PostCreationPageModel -> Element Messages.Message
 view _ =
     el [] ( text "Me CreatePost Page!" )
 
+
+
+isCreatePostPage: Url -> PostCreationPageModel -> Bool
+isCreatePostPage url model =
+        Url.toString url == model.pageUrl
 
 
 

@@ -3,39 +3,18 @@ module Pages.MainPage exposing (..)
 import Browser
 import Element exposing (..)
 import Element.Font as Font
+import Http
 import Messages exposing (MainPageMessage(..), Message(..))
 import PageParts.Sidebar exposing (sidebar, SidebarModel, SidebarLink)
-import Pages.CreatePost as CP exposing (PostCreationPageModel)
-import Pages.FromJson.MainPage exposing (MainPageInitParams)
-import Pages.Link exposing (Link)
+import Pages.CreatePost as CP
+import Pages.FromJson.MainPage exposing (MainPageInitParams, decodeSubpageData)
+import Pages.PagesModels.MainPageModel exposing (Error(..), MainPageModel, SubpageModel(..), ActiveSubpage)
+import Pages.PagesModels.LoadingPageModel as L
+import Pages.Loading as L
+import Pages.Link as Lnk
+import Pages.SubpageUrl exposing (SubpageUrl)
 import Url exposing (Url)
 
-
-
---      MODEL
-
-type alias PageName = String
-type alias PageUrl = String
-
-
-type alias MainPageModel = {
-        sidebarLinks: List Link
-       ,text: String
-       ,alreadyLoadedPages: List AlreadyLoadedPage
-       ,activeSubpage: (Url, SubpageModel)
-    }
-
-type alias AlreadyLoadedPage = {
-        pgModel: SubpageModel,
-        url: String
-    }
-
-type SubpageModel =
-      CreatePostModel PostCreationPageModel
-    | ViewPostModel
-    | ShowAllPostsModel
-    | LoadingPageModel
-    | HomePageModel
 
 
 
@@ -44,7 +23,20 @@ type SubpageModel =
 
 initModel: MainPageInitParams -> Url -> Result Error (MainPageModel, Cmd Message)
 initModel mainPageInitParams url =
-    Ok <| ( MainPageModel mainPageInitParams.sidebarLinks "Nothing clicked" [] (url, HomePageModel), Cmd.none)
+    Ok <| ( MainPageModel [
+            -- todo: once server starts sending localized strings, remove hardcoded link text (fix deserializer)
+            Lnk.Link mainPageInitParams.createPostPageUrl "Create post" Lnk.CreatePost,
+            Lnk.Link mainPageInitParams.viewAllPostsPageUrl "View all posts" Lnk.ViewAllPosts
+        ]
+        "Nothing clicked"
+        []
+        (ActiveSubpage url HomePageModel)
+        {
+            createPostPageUrl = mainPageInitParams.createPostPageUrl
+           ,viewAllPostsPageUrl = mainPageInitParams.viewAllPostsPageUrl
+        }
+
+          , Cmd.none )
 
 
 
@@ -58,12 +50,51 @@ update mainPageModel message =
             LinkClicked url ->
                 case url of
                     Browser.Internal href ->
-                        ({mainPageModel | text = "Clicked url: " ++ (Url.toString href)}, Cmd.none)
+                        case intoPageUrl href mainPageModel of
+                            Nothing -> (mainPageModel, Cmd.none)    -- todo: don't ignore.
+                            Just pageUrl ->
+                                case viewUrl pageUrl mainPageModel of
+                                    Ok (activeSubpage, cmd) ->
+                                        ({mainPageModel | activeSubpage = activeSubpage}, cmd)
+
+                                    Err _ -> (mainPageModel, Cmd.none)
+
                     Browser.External href ->
                         ({mainPageModel | text = "Clicked url: " ++ href}, Cmd.none)
+
+            GotPageInfo url response ->
+                processGotPageInfoMsg url response mainPageModel
+
             _ -> (mainPageModel, Cmd.none)
 
 
+processGotPageInfoMsg: SubpageUrl -> Result Http.Error Pages.FromJson.MainPage.SubpageInitParams -> MainPageModel -> (MainPageModel, Cmd Message)
+processGotPageInfoMsg url response mpModel =
+    case response of
+        Err er -> (mpModel, Cmd.none)
+        Ok val -> (mpModel, Cmd.none)
+
+
+
+
+requestPageParams: SubpageUrl -> Cmd Message
+requestPageParams url =
+    Http.get
+        {
+            url = Url.toString url.url
+          , expect = Http.expectJson (\result -> Messages.MPMessage <| Messages.GotPageInfo url result) decodeSubpageData
+        }
+
+
+intoPageUrl: Url -> MainPageModel -> Maybe SubpageUrl
+intoPageUrl url model =
+    let
+        strUrl = url.path
+    in
+
+    if (String.startsWith model.subpagesUrls.createPostPageUrl strUrl) then Just <| SubpageUrl Lnk.CreatePost url else
+    if (String.startsWith model.subpagesUrls.viewAllPostsPageUrl strUrl) then Just <| SubpageUrl Lnk.ViewAllPosts url else
+        Nothing
 
 
 --      VIEW
@@ -84,25 +115,25 @@ view model =
     row [ width <| minimum 600 fill, height fill, Font.size 16 ]
                     [
                         sidebar sidebarModel
-                       , case model.activeSubpage of (_, m) -> viewSubpage m
+                       ,viewSubpage model.activeSubpage.subpageModel
                     ]
 
 
 
 
-viewUrl: Url -> MainPageModel -> Result Error ((Url, SubpageModel), Cmd Message)
+viewUrl: SubpageUrl -> MainPageModel -> Result Error (ActiveSubpage, Cmd Message)
 viewUrl url model =
-    case List.filter (\li -> li.url == Url.toString url) model.alreadyLoadedPages of
-        [] -> Ok ((url, LoadingPageModel), Cmd.none)
-        [item] -> Ok ((url, item.pgModel), Cmd.none)
+    case List.filter (\li -> li.url == Url.toString url.url) model.alreadyLoadedPages of
+        [] -> Ok (ActiveSubpage url.url (LoadingPageModel L.defaultPageModel), requestPageParams url)
+        [item] -> Ok ((ActiveSubpage url.url item.pgModel), Cmd.none)
 
-        _ -> Err <| SeveralPagesWithSameUrl <| Url.toString url
+        _ -> Err <| SeveralPagesWithSameUrl <| Url.toString url.url
 
 
 
-viewLoadingPage: Element Message
-viewLoadingPage =
-    (text "Loading...")
+viewLoadingPage: L.LoadingPageModel -> Element Message
+viewLoadingPage m =
+    L.view m
 
 
 viewHomepage: Element Message
@@ -115,23 +146,9 @@ viewSubpage: SubpageModel -> Element Message
 viewSubpage subpageModel =
     case subpageModel of
         CreatePostModel m -> CP.view m
-        LoadingPageModel -> viewLoadingPage
+        LoadingPageModel m -> viewLoadingPage m
         HomePageModel -> viewHomepage
         _ -> (text "Unknown page!")
 
 
 
---      ERRORS
-
-type Error =
-     ModelInitErr String
-   | UnknownPageType String String   -- first is page type, second - error message
-   | SeveralPagesWithSameUrl String
-
-
-errToString: Error -> String
-errToString error =
-    case error of
-        ModelInitErr err -> err
-        UnknownPageType pgName description -> "No such page " ++ pgName ++ " (" ++ description ++ ")"
-        SeveralPagesWithSameUrl url -> "Found several pages with same url: " ++ url

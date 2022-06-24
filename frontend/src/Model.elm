@@ -1,7 +1,7 @@
 module Model exposing (..)
 
 
-import Pages.MainPage as MP
+import Pages.PagesModels.MainPageModel as MP
 
 
 type Model =

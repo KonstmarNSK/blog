@@ -23,22 +23,8 @@ mainForReactor =
     }
 
 defaultFlags = object [
-    ("sidebar-links", list object [
-        [
-            ("text", string "Create post")
-           ,("url", string "some-create-post-url")
-        ],
-
-        [
-            ("text", string "View post")
-           ,("url", string "some-view-post-url")
-        ],
-
-        [
-            ("text", string "View all posts")
-           ,("url", string "some-view-all-posts-url")
-        ]
-    ])
+    ("create-post-page-url", string "some-create-post-page-url"),
+    ("view-all-posts-page-url", string "some-view-all-posts-page-url")
   ]
 
 defaultInit: Flags -> Url -> Navigation.Key  -> (Model.Model, Cmd Message)

@@ -3,6 +3,7 @@ module Pages.FromJson.MainPage exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Pages.Link exposing (Link)
+import Pages.FromJson.CreatePostPage as CP
 
 
 
@@ -10,8 +11,13 @@ import Pages.Link exposing (Link)
 --      READ DATA FROM FLAGS
 
 type alias MainPageInitParams = {
-       sidebarLinks: List Link
+       createPostPageUrl: String
+      ,viewAllPostsPageUrl: String
     }
+
+
+type SubpageInitParams =
+    CreatePostPageInitParams CP.PageInitParams
 
 
 --      DECODERS
@@ -19,14 +25,13 @@ type alias MainPageInitParams = {
 getDataFromFlags: Decoder MainPageInitParams
 getDataFromFlags =
     Decode.succeed MainPageInitParams
-        |> required "sidebar-links" (Decode.list decodeLink)
+        |> required "create-post-page-url" Decode.string
+        |> required "view-all-posts-page-url" Decode.string
 
 
-
-
-decodeLink: Decoder Link
-decodeLink =
-    Decode.succeed Link
-        |> required "url" Decode.string
-        |> required "text" Decode.string
+decodeSubpageData: Decoder SubpageInitParams
+decodeSubpageData =
+    Decode.oneOf [
+        Decode.map CreatePostPageInitParams CP.getDataFromFlags
+    ]
 

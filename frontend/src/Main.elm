@@ -7,6 +7,7 @@ import Json.Decode
 import Messages exposing (MainPageMessage(..), Message(..))
 import Pages.FromJson.MainPage as MP
 import Pages.MainPage as MP
+import Pages.PagesModels.MainPageModel as MPM
 
 import Model
 import Url exposing (Url)
@@ -34,7 +35,7 @@ init flags url _ =
         case decodedFlags of
             Ok val -> case MP.initModel val url of
                 Ok (m, cmd) -> (Model.Correct {mainPageModel = m}, cmd)
-                Err e -> (Model.Incorrect <| Model.IncorrectFlags <| MP.errToString e, Cmd.none)
+                Err e -> (Model.Incorrect <| Model.IncorrectFlags <| MPM.errToString e, Cmd.none)
 
             Err e ->
                 (Model.Incorrect <| Model.IncorrectFlags <| "Flags are incorrect! " ++ (Json.Decode.errorToString e) , Cmd.none)

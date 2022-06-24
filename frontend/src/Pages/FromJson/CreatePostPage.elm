@@ -6,6 +6,9 @@ module Pages.FromJson.CreatePostPage exposing (..)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline
+
+
+
 type alias PageInitParams = {
         createPostSubmitUrl: String
     }
