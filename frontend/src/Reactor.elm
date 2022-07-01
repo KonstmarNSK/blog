@@ -23,8 +23,9 @@ mainForReactor =
     }
 
 defaultFlags = object [
-    ("create-post-page-url", string "some-create-post-page-url"),
-    ("view-all-posts-page-url", string "some-view-all-posts-page-url")
+    ("base-url", string "http://localhost:8000/src"),   -- using this instead of window.location
+    ("create-post-page-url", string "some-create-post-page-url.json"),
+    ("view-all-posts-page-url", string "some-view-all-posts-page-url.json")
   ]
 
 defaultInit: Flags -> Url -> Navigation.Key  -> (Model.Model, Cmd Message)

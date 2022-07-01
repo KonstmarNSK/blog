@@ -14,8 +14,8 @@ type alias PageInitParams = {
     }
 
 
-getDataFromFlags: Decoder PageInitParams
-getDataFromFlags =
+fromJson: Decoder PageInitParams
+fromJson =
     Decode.succeed PageInitParams
         |> Json.Decode.Pipeline.required "createPostSubmitUrl" Decode.string
 

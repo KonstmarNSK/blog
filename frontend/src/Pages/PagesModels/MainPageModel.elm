@@ -3,6 +3,7 @@ module Pages.PagesModels.MainPageModel exposing (..)
 import Pages.Link exposing (Link)
 import Pages.PagesModels.CreatePostPageModel exposing (PostCreationPageModel)
 import Pages.PagesModels.LoadingPageModel as L
+import Pages.PagesModels.ViewPostPageModel exposing (ViewPostPageModel)
 import Url exposing (Url)
 
 
@@ -32,7 +33,7 @@ type alias AlreadyLoadedPage = {
 
 type SubpageModel =
       CreatePostModel PostCreationPageModel
-    | ViewPostModel
+    | ViewPostModel ViewPostPageModel
     | ShowAllPostsModel
     | LoadingPageModel L.LoadingPageModel
     | HomePageModel
