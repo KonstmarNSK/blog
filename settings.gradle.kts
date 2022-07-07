@@ -1,5 +1,13 @@
 rootProject.name = "blog"
 
-include("backend", "frontend")
+include(
+    "frontend",
+    "frontend:main",
+    "frontend:httpapi",
+
+    "backend",
+    "backend:mainservice:webserver",
+    "backend:mainservice:httpapi"
+)
 
 

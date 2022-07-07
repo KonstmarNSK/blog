@@ -6,7 +6,6 @@ import java.nio.file.LinkOption
 group = "ru.kostya"
 version = "0.0.1-SNAPSHOT"
 
-
 val buildDirParam = File(projectDir, "build")
 val elmStuffDirParam = File(projectDir, "elm-stuff")
 val pathToElmExecutableParam = "elm"
@@ -99,6 +98,8 @@ abstract class CleanFrontend : DefaultTask() {
 
 
 tasks.register<BuildFrontend>("build") {
+    dependsOn(project(":backend:mainservice:httpapi").tasks.getByName("build"))
+
     maxBuildTimeSeconds.set(maxBuildTimeSecondsParam)
     outputDir.set(buildDirParam)
     pathToElmExecutable.set(pathToElmExecutableParam)
