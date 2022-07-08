@@ -30,40 +30,67 @@ sealed interface UrlPart{
 
 
 class Url private constructor(
-    private val pathParts: UrlPart.PathUrlPart,
-    private val queryParts: UrlPart.QueryUrlPart
+    private val pathPart: UrlPart.PathUrlPart,
+    private val queryPart: UrlPart.QueryUrlPart
 ) {
     companion object { fun builder(): UrlBuilder = UrlBuilder.empty() }
 
-    fun toString(pathVariables: Map<String, String> = emptyMap(), queryVariables: Map<String, String> = emptyMap()): Result<String> =
-        pathParts.pathParts.runCatching {
-            joinToString(separator = "/") {
-                when(it) {
-                    is PartOfPath.StringPathPart -> it.s
+    fun toClientString(
+        pathVariables: Map<String, String> = emptyMap(),
+        queryVariables: Map<String, String> = emptyMap()
+    ): Result<String> =
+        with(ClientUrlStringifier(pathVariables, queryVariables)) {
 
-                    is PartOfPath.PathVariable ->
-                        when(val value = pathVariables[it.name]) {
-                            is String -> value
-                            else -> throw IllegalArgumentException("Value for path variable '${it.name}' wasn't set")
-                        }
-                }
-            }
-        }.map {
-            "$it?" + queryParts.queryParts.runCatching {
-                joinToString(separator = "&") { queryPart ->
-                    when(queryPart) {
-                        is PartOfQuery.StringQueryPart -> queryPart.s
-
-                        is PartOfQuery.QueryVariable ->
-                            when(val value = queryVariables[queryPart.name]) {
-                                is String -> value
-                                else -> throw IllegalArgumentException("Value for query variable '${queryPart.name}' wasn't set")
-                            }
+            pathPart.pathParts.runCatching {
+                fold("") { accum, next ->
+                        accum.trimEnd('/') + "/" + pathPartProcess(next).trimStart('/')
                     }
-                }
+            }.mapCatching {
+                if (showQuery(queryPart))
+                    "$it?" + queryPart.queryParts.joinToString(separator = "&") { queryPart ->
+                            queryPartProcess(queryPart)
+                    }
+                else
+                    it
             }
         }
 
+
+    interface Stringifier {
+        fun pathPartProcess(pathPart: PartOfPath) : String
+        fun queryPartProcess(queryPart: PartOfQuery) : String
+        fun showQuery(query: UrlPart.QueryUrlPart) : Boolean
+    }
+
+    private class ClientUrlStringifier(
+        val pathVariables: Map<String, String>,
+        val queryVariables: Map<String, String>
+    ) : Stringifier {
+
+        override fun pathPartProcess(pathPart: PartOfPath) =
+            when(pathPart) {
+                is PartOfPath.StringPathPart -> pathPart.s
+
+                is PartOfPath.PathVariable ->
+                    when(val value = pathVariables[pathPart.name]) {
+                        is String -> value
+                        else -> throw IllegalArgumentException("Value for path variable '${pathPart.name}' wasn't set")
+                    }
+            }
+
+        override fun queryPartProcess(queryPart: PartOfQuery) =
+            when(queryPart) {
+                is PartOfQuery.StringQueryPart -> queryPart.s
+
+                is PartOfQuery.QueryVariable ->
+                    when(val value = queryVariables[queryPart.name]) {
+                        is String -> "${queryPart.name}=$value"
+                        else -> throw IllegalArgumentException("Value for query variable '${queryPart.name}' wasn't set")
+                    }
+            }
+
+        override fun showQuery(query: UrlPart.QueryUrlPart): Boolean = query.queryParts.isNotEmpty()
+    }
 
 
 

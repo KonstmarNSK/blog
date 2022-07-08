@@ -60,7 +60,7 @@ tasks.getByName<BootJar>("bootJar") {
 tasks.register<Copy>("copy-front"){
     dependsOn(project(":frontend:main").tasks.findByName("build"))
 
-    from(project(":frontend").buildDir)
+    from(project(":frontend:main").buildDir)
     into("${projectDir.absolutePath}/build/resources/main/static")
 }
 

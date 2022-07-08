@@ -6,7 +6,7 @@ blog:
   db-pass: pswd1
 
   security:
-    enabled: true
+    enabled: false
 
 server:
   port: 8082

@@ -14,7 +14,6 @@ class ClientEndpoint<TInput : InputData, TOutput : OutputData>(
         EndpointReqBuilder<TInput, TOutput>(
             serverLocation,
             endpoint,
-            mutableMapOf(),
             null
         )
 }
@@ -23,30 +22,28 @@ class ClientEndpoint<TInput : InputData, TOutput : OutputData>(
 class EndpointReqBuilder<TInput : InputData, TOutput : OutputData>(
     val serverLocation: String,
     val endpoint: Endpoint<TInput, TOutput>,
-    val pathVariables: Map<String, String>,
     val reqData: TInput?
 ) {
-
-    fun withPathVar(name: String, value: String) =
-        EndpointReqBuilder<TInput, TOutput>(
-            serverLocation,
-            endpoint,
-            pathVariables + (name to value),
-            reqData
-        )
 
     fun withData(data: TInput) =
         EndpointReqBuilder<TInput, TOutput>(
             serverLocation,
             endpoint,
-            pathVariables,
             data
         )
 
-    suspend fun send() {
-        val response = window
+    suspend fun send() : String {
+        val (pathVars, queryVars) = when (reqData) {
+            is TInput -> Pair(reqData.pathParams, reqData.queryParams)
+            else -> Pair(mapOf<String, String>(), mapOf<String, String>())
+        }
+
+        val url : String = serverLocation + endpoint.url.toClientString(pathVars, queryVars).getOrThrow()
+        console.log("Url is $url")
+
+        return window
             .fetch(
-                serverLocation + endpoint.url.toString(pathVariables).getOrThrow()
+                url
             )
             .await()
             .text()

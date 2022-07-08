@@ -7,10 +7,10 @@ import kotlinx.serialization.Serializable
 
 
 object pages {
-    val homepageEndpoint =          Endpoint.get<InputData.Empty, HPOut> { s("/") }
-    val createPostPageEndpoint =    Endpoint.get<InputData.Empty, CPOut> { s("/post/create") }
-    val viewPostPageEndpoint =      Endpoint.get<InputData.Empty, VPOut> { s("/post/view").pv("post_id") }
-    val viewAllPostsPageEndpoint =  Endpoint.get<InputData.Empty, VAOut> { s("/post/all") }
+    val homepageEndpoint =          Endpoint.get<InputData.Empty, HPOut> { path{ s("/") }}
+    val createPostPageEndpoint =    Endpoint.get<InputData.Empty, CPOut> { path{ s("/post/create") }}
+    val viewPostPageEndpoint =      Endpoint.get<InputData.Empty, VPOut> { path{ s("/post/view").pv("post_id") }}
+    val viewAllPostsPageEndpoint =  Endpoint.get<InputData.Empty, VAOut> { path{ s("/post/all") }}
 
 
     @Serializable data class HPOut(val someData: String): OutputData

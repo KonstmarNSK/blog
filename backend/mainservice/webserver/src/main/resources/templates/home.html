@@ -3,19 +3,13 @@
     <title>Home</title>
     <link data-th-href="@{bootstrap.css}" rel="stylesheet">
     <script type="text/javascript" data-th-src="@{Main.js}"></script>
+    <script type="text/javascript" data-th-src="@{clienthttp.js}"></script>
 </head>
     <body>
 
         <div id="myapp"></div>
 
         <script data-th-inline="javascript" type="text/javascript">
-            /*<![CDATA[*/
-            const properties = {
-                base_url: /*[[@{${page.baseUrl}}]]*/ '<no-url>',   -- using this instead of window.location
-                create_post_page_url: /*[[@{${page.createPostPageUrl}}]]*/,
-                view_all_posts_page_url: /*[[@{${page.viewAllPostsPageUrl}}]]*/)
-            }
-            /*]]>*/
 
             // Start the Elm application.
             Elm.Main.init({

@@ -96,9 +96,17 @@ abstract class CleanFrontend : DefaultTask() {
     }
 }
 
+tasks.register<Copy>("copy-front-clienthttp"){
+    dependsOn(project(":frontend:clienthttp").tasks.getByName("build"))
+
+    println("BD: " + project(":frontend:clienthttp").buildDir)
+
+    from(File(project(":frontend:clienthttp").buildDir, "distributions"))
+    into("${projectDir.absolutePath}/build")
+}
 
 tasks.register<BuildFrontend>("build") {
-    dependsOn(project(":backend:mainservice:httpapi").tasks.getByName("build"))
+    dependsOn("copy-front-clienthttp")
 
     maxBuildTimeSeconds.set(maxBuildTimeSecondsParam)
     outputDir.set(buildDirParam)
@@ -109,3 +117,7 @@ tasks.register<BuildFrontend>("build") {
 tasks.register<CleanFrontend>("clean"){
     filesToRemove = listOf(buildDirParam, elmStuffDirParam)
 }
+
+
+
+
