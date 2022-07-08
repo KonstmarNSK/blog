@@ -18,8 +18,8 @@ sealed interface PartOfPath {
 }
 
 sealed interface PartOfQuery{
-    data class StringQueryPart(val s: String) : PartOfQuery
-    data class QueryVariable(val name: String) : PartOfQuery
+    data class QueryOptionalVariable(val name: String) : PartOfQuery
+    data class QueryRequiredVariable(val name: String) : PartOfQuery
 }
 
 sealed interface UrlPart{
@@ -35,25 +35,32 @@ class Url private constructor(
 ) {
     companion object { fun builder(): UrlBuilder = UrlBuilder.empty() }
 
+    fun toString(
+        stringifier: Stringifier
+    ): Result<String> =
+
+        pathPart.pathParts.runCatching {
+            fold("") { accum, next ->
+                accum.trimEnd('/') + "/" + stringifier.pathPartProcess(next).trimStart('/')
+            }
+
+        }.mapCatching {path ->
+            if (stringifier.showQuery(queryPart))
+                queryPart.queryParts.joinToString(separator = "&") { queryPart ->
+                    stringifier.queryPartProcess(queryPart)
+
+                    // we print query part only if there are any query parameters
+                }.takeIf { it.isNotBlank() }?.let { "$path?$it" } ?: path
+            else
+                path
+        }
+
+
     fun toClientString(
         pathVariables: Map<String, String> = emptyMap(),
         queryVariables: Map<String, String> = emptyMap()
     ): Result<String> =
-        with(ClientUrlStringifier(pathVariables, queryVariables)) {
-
-            pathPart.pathParts.runCatching {
-                fold("") { accum, next ->
-                        accum.trimEnd('/') + "/" + pathPartProcess(next).trimStart('/')
-                    }
-            }.mapCatching {
-                if (showQuery(queryPart))
-                    "$it?" + queryPart.queryParts.joinToString(separator = "&") { queryPart ->
-                            queryPartProcess(queryPart)
-                    }
-                else
-                    it
-            }
-        }
+        toString(ClientUrlStringifier(pathVariables, queryVariables))
 
 
     interface Stringifier {
@@ -79,17 +86,23 @@ class Url private constructor(
             }
 
         override fun queryPartProcess(queryPart: PartOfQuery) =
-            when(queryPart) {
-                is PartOfQuery.StringQueryPart -> queryPart.s
+            when (queryPart) {
+                is PartOfQuery.QueryOptionalVariable ->
+                    when (val value = queryVariables[queryPart.name]) {
+                        is String -> "${queryPart.name}=$value"
+                        else -> ""
+                    }
 
-                is PartOfQuery.QueryVariable ->
-                    when(val value = queryVariables[queryPart.name]) {
+                is PartOfQuery.QueryRequiredVariable ->
+                    when (val value = queryVariables[queryPart.name]) {
                         is String -> "${queryPart.name}=$value"
                         else -> throw IllegalArgumentException("Value for query variable '${queryPart.name}' wasn't set")
                     }
             }
 
+
         override fun showQuery(query: UrlPart.QueryUrlPart): Boolean = query.queryParts.isNotEmpty()
+
     }
 
 
@@ -100,10 +113,10 @@ class Url private constructor(
     ){
         companion object { fun empty() = UrlBuilder(PathPartUrlBuilder.empty(), QueryPartUrlBuilder.empty())}
 
-        fun path(pathBuilder: PathPartUrlBuilder.() -> PathPartUrlBuilder) =
+        infix fun path(pathBuilder: PathPartUrlBuilder.() -> PathPartUrlBuilder) =
             UrlBuilder(pathBuilder.invoke(this.pathBuilder), queryBuilder)
 
-        fun query(queryBuilder: QueryPartUrlBuilder.() -> QueryPartUrlBuilder) =
+        infix fun query(queryBuilder: QueryPartUrlBuilder.() -> QueryPartUrlBuilder) =
             UrlBuilder(pathBuilder, queryBuilder.invoke(this.queryBuilder))
 
 
@@ -121,8 +134,8 @@ class PathPartUrlBuilder private constructor(
 ) {
     companion object { fun empty() = PathPartUrlBuilder(emptyList())}
 
-    fun s(s: String) = PathPartUrlBuilder(pathParts + PartOfPath.StringPathPart(s))
-    fun pv(s: String) = PathPartUrlBuilder(pathParts + PartOfPath.PathVariable(s))
+    infix fun s(s: String) = PathPartUrlBuilder(pathParts + PartOfPath.StringPathPart(s))
+    infix fun pv(s: String) = PathPartUrlBuilder(pathParts + PartOfPath.PathVariable(s))
 
     fun build() = UrlPart.PathUrlPart(pathParts)
 }
@@ -133,8 +146,13 @@ class QueryPartUrlBuilder constructor(
 ) {
     companion object { fun empty() = QueryPartUrlBuilder(emptyList())}
 
-    fun s(s: String) = QueryPartUrlBuilder(queryParts + PartOfQuery.StringQueryPart(s))
-    fun qv(s: String) = QueryPartUrlBuilder(queryParts + PartOfQuery.QueryVariable(s))
+    // optional parameter
+    infix fun op(s: String) = QueryPartUrlBuilder(queryParts + PartOfQuery.QueryOptionalVariable(s))
+
+    // required parameter
+    infix fun rp(s: String) = QueryPartUrlBuilder(queryParts + PartOfQuery.QueryRequiredVariable(s))
+
+
 
     fun build() = UrlPart.QueryUrlPart(queryParts)
 }

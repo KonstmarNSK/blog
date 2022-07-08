@@ -23,9 +23,10 @@ data class Endpoint<TInput: InputData, TOutput: OutputData>(
 
 interface OutputData
 
-abstract class InputData{
-    val queryParams: MutableMap<String, String> = mutableMapOf()
+abstract class InputData(
+    val queryParams: MutableMap<String, String> = mutableMapOf(),
     val pathParams: MutableMap<String, String> = mutableMapOf()
+){
 
 
     class QueryParamDelegate(private val pName: String){

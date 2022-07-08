@@ -11,6 +11,25 @@ repositories {
 }
 
 kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "11"
+        }
+        withJava()
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
+
+    js(IR) {
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
+        binaries.executable()
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -21,24 +40,8 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+//                testImplementation(kotlin("test-js"))
             }
         }
-    }
-}
-kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "11"
-        }
-        withJava()
-    }
-
-    js(IR) {
-        browser {}
-        binaries.executable()
-    }
-
-    sourceSets {
-        val commonMain by getting
     }
 }
