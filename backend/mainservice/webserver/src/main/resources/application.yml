@@ -1,0 +1,39 @@
+blog:
+  db-host: postgres
+  db-port: 5432
+  db-name: postgres
+  db-user: postgres
+  db-pass: pswd1
+
+  security:
+    enabled: false
+
+server:
+  port: 8082
+  servlet:
+    context-path: /${BLOG_URL_PREFIX:blog}
+
+springdoc:
+  api-docs:
+    path: "/api-docs"
+  swagger-ui:
+    path: "/swagger"
+
+spring:
+  datasource:
+
+    url: jdbc:postgresql://${blog.db-host}:${blog.db-port}/${blog.db-name}
+    username: ${blog.db-user}
+    password: ${blog.db-pass}
+
+
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: blog
+
+  jpa:
+    open-in-view: false
+
+  flyway:
+    baseline-on-migrate: true
+    schemas: blog

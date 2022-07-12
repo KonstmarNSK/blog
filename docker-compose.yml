@@ -1,9 +1,14 @@
 # single-host configuration for testing purposes
 services:
   web:
-    build: .
+    build:
+      context: ./backend/mainservice/webserver
+      args:
+          DEBUG_BUILD: "true"
+          DEBUG_PORT: "9054"
     ports:
-      - "8082:8082"
+      - "8082:8082"   # web http
+      - "9054:9054"   # java debug port
     links:
       - postgres
   postgres:
