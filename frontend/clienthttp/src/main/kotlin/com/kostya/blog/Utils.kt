@@ -1,6 +1,6 @@
 package com.kostya.blog
 
-import com.kostya.blog.utils.Endpoint
+import com.kostya.blog.utils.EndpointImpl
 import com.kostya.blog.utils.InputData
 import com.kostya.blog.utils.OutputData
 import kotlinx.browser.window
@@ -8,7 +8,7 @@ import kotlinx.coroutines.await
 
 class ClientEndpoint<TInput : InputData, TOutput : OutputData>(
     val serverLocation: String,
-    val endpoint: Endpoint<TInput, TOutput>
+    val endpoint: EndpointImpl<TInput, TOutput>
 ) {
     fun req() =
         EndpointReqBuilder<TInput, TOutput>(
@@ -21,7 +21,7 @@ class ClientEndpoint<TInput : InputData, TOutput : OutputData>(
 
 class EndpointReqBuilder<TInput : InputData, TOutput : OutputData>(
     val serverLocation: String,
-    val endpoint: Endpoint<TInput, TOutput>,
+    val endpoint: EndpointImpl<TInput, TOutput>,
     val reqData: TInput?
 ) {
 

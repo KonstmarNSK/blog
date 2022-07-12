@@ -12,14 +12,24 @@ import org.springframework.web.servlet.function.ServerResponse.ok
 import com.kostya.blog.utils.HttpMethod as EndpointHttpMethod
 
 
-
 @Bean
-fun getServerEndpointsImplementation() : RouterFunction<ServerResponse> =
-    pages.homepageEndpoint.intoSpringRoute{ _ -> Result.success(pages.HPOut(someData = "from home controller"))}.getOrThrow()
+fun getServerEndpointsImplementation(): RouterFunction<ServerResponse> =
+    pages.homepageEndpoint.intoSpringRoute { _ -> Result.success(pages.HPOut(someData = "from home controller")) }
+        .and(
+            pages.experimental.intoSpringRoute { _ -> Result.success(pages.HPOut(someData = "from exp")) }
+        )
+
+        .getOrThrow()
 
 
+infix fun Result<RouterFunction<ServerResponse>>.and(right: Result<RouterFunction<ServerResponse>>): Result<RouterFunction<ServerResponse>> {
+    return right.flatmap { r -> this.map { it.and(r) } }
+}
 
-private inline fun <reified TInput : InputData, reified TOutput : OutputData> Endpoint<TInput, TOutput>.intoSpringRoute(
+fun <T, V> Result<T>.flatmap(other: (T) -> Result<V>): Result<V> =
+    this.mapCatching { other.invoke(it).getOrThrow() }
+
+private inline fun <reified TInput : InputData, reified TOutput : OutputData> EndpointImpl<TInput, TOutput>.intoSpringRoute(
     crossinline handler: (Result<TInput?>) -> Result<TOutput>
 ): Result<RouterFunction<ServerResponse>> =
     this.url.toString(clientUrlStringifier).map { strUrl ->

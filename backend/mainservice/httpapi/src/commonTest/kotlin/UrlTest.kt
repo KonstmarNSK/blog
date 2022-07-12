@@ -1,6 +1,8 @@
-import com.kostya.blog.utils.Endpoint
+import Ep.Companion.endpoint
+import com.kostya.blog.utils.EndpointImpl
 import com.kostya.blog.utils.InputData
 import com.kostya.blog.utils.OutputData
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -10,13 +12,13 @@ class SampleTests {
 
     @Test
     fun testUrlToString() {
-        val endpoint = Endpoint.get<InputData.Empty, EmptyOut> { path { s("/") } }
-        val compositeEndpoint = Endpoint.get<InputData.Empty, EmptyOut> { path { s("/abd") s ("def") } }
-        val endpointWithPathVar = Endpoint.get<InputData.Empty, EmptyOut> { path { s("/") pv ("somePv") s ("a") } }
+        val endpoint = EndpointImpl.get<InputData.Empty, EmptyOut> { path { s("/") } }
+        val compositeEndpoint = EndpointImpl.get<InputData.Empty, EmptyOut> { path { s("/abd") s ("def") } }
+        val endpointWithPathVar = EndpointImpl.get<InputData.Empty, EmptyOut> { path { s("/") pv ("somePv") s ("a") } }
         val endpointWithQuery =
-            Endpoint.get<InputData.Empty, EmptyOut> { path { s("/addr1") } query { rp("someQueryVariable") } }
+            EndpointImpl.get<InputData.Empty, EmptyOut> { path { s("/addr1") } query { rp("someQueryVariable") } }
         val endpointWithOptionalQuery =
-            Endpoint.get<InputData.Empty, EmptyOut> { path { s("/addr2") } query { op("someQV") } }
+            EndpointImpl.get<InputData.Empty, EmptyOut> { path { s("/addr2") } query { op("someQV") } }
 
 
         assertEquals("/", endpoint.url.toClientString().getOrNull())
@@ -44,3 +46,5 @@ class SampleTests {
         assertEquals("/addr2", endpointWithOptionalQuery.url.toClientString().getOrNull())
     }
 }
+
+

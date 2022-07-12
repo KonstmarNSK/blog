@@ -3,18 +3,27 @@ package com.kostya.blog.utils
 import kotlin.reflect.KProperty
 
 
-data class Endpoint<TInput: InputData, TOutput: OutputData>(
+
+interface Endpoint<TInput: InputData, TOutput: OutputData> {
+    companion object {
+        inline fun <reified TIn: InputData, reified TOut: OutputData> endpoint(method: HttpMethod, ) {
+
+        }
+    }
+}
+
+data class EndpointImpl<TInput : InputData, TOutput : OutputData>(
     val url: Url,
     val method: HttpMethod
-) {
+) : Endpoint<TInput, TOutput> {
 
     companion object {
 
         inline fun <reified TIn: InputData, reified TOut: OutputData> get(url: Url.UrlBuilder.() -> Url.UrlBuilder) =
-            Endpoint<TIn, TOut>(url = url.invoke(Url.builder()).build(), HttpMethod.GET)
+            EndpointImpl<TIn, TOut>(url = url.invoke(Url.builder()).build(), HttpMethod.GET)
 
         inline fun <reified TIn: InputData, reified TOut: OutputData> post(url: Url.UrlBuilder.() -> Url.UrlBuilder) =
-            Endpoint<TIn, TOut>(url = url.invoke(Url.builder()).build(), HttpMethod.POST)
+            EndpointImpl<TIn, TOut>(url = url.invoke(Url.builder()).build(), HttpMethod.POST)
 
     }
 
@@ -57,4 +66,6 @@ abstract class InputData(
         fun pathParam(name: String) = PathParamDelegate(name)
     }
 }
+
+
 
