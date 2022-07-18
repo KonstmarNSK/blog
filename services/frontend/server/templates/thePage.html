@@ -1,0 +1,25 @@
+<html lang="en">
+<head>
+    <title>Home</title>
+    <script type="text/javascript" src="assets/Main-compressed.js"></script>
+</head>
+<body>
+
+<div id="myapp"></div>
+
+<script type="text/javascript">
+
+            const elmFlags = <%- serde_json::to_string(&elm_flags).unwrap() %>
+
+
+            // Start the Elm application.
+            Elm.Main.init({
+                node: document.getElementById('myapp'),
+                flags: elmFlags
+            });
+
+</script>
+
+
+</body>
+</html>

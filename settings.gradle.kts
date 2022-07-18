@@ -1,13 +1,11 @@
 rootProject.name = "blog"
 
 include(
-    "frontend",
-    "frontend:main",
-    "frontend:clienthttp",
+    "services:frontend:browserclient",
+    "services:frontend:server",
 
-    "backend",
-    "backend:mainservice:webserver",
-    "backend:mainservice:httpapi"
+    "services:httpgateway"
 )
+
 
 
