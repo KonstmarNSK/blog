@@ -5,30 +5,38 @@ import Pages.PagesModels.CreatePostPageModel exposing (PostCreationPageModel)
 import Pages.PagesModels.LoadingPageModel as L
 import Pages.PagesModels.ViewPostPageModel exposing (ViewPostPageModel)
 import Url exposing (Url)
+import Pages.PageType as PT
 
 
 
 type alias MainPageModel = {
         sidebarLinks: List Link
-       ,text: String
-       ,alreadyLoadedPages: List AlreadyLoadedPage
+       ,alreadyLoadedPages: AlreadyLoadedPages
        ,activeSubpage: ActiveSubpage
-       ,subpagesUrls: {
-            createPostPageUrl: String,
-            viewAllPostsPageUrl: String
-        }
+       ,apiUrlPrefix: Pages.Link.ApiRootPrefix
+       ,pageRootPrefix: Pages.Link.PageRootPrefix
     }
 
 
-type alias ActiveSubpage = {
-        url: Url
-       ,subpageModel: SubpageModel
-    }
 
-type alias AlreadyLoadedPage = {
-        pgModel: SubpageModel,
-        url: String
-    }
+type ActiveSubpage = ActiveSubpage AlreadyLoadedPage
+
+type AlreadyLoadedPages =
+    AlreadyLoadedPages { activeSubpage: ActiveSubpage, alreadyLoadedPages: List AlreadyLoadedPage}
+  | EmptyAlreadyLoadedPages
+
+type AlreadyLoadedPage = AlreadyLoadedPage { pageType: PT.PageType, url: PageUrl PT.PageType, pageModel: SubpageModel }
+
+
+type PageUrl pageType =
+    PageUrl pageType Url
+
+
+pageUrlIntoUrl: PageUrl t -> Url
+pageUrlIntoUrl pageUrl =
+    case pageUrl of
+        PageUrl _ u -> u
+
 
 
 type SubpageModel =

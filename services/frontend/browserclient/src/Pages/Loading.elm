@@ -1,7 +1,7 @@
 module Pages.Loading exposing (..)
 
 import Element exposing (..)
-import Messages exposing (Message)
+import Messages.Messages exposing (Message)
 import Pages.PagesModels.LoadingPageModel exposing (LoadingPageModel)
 
 
@@ -15,8 +15,12 @@ view model =
 
             image [width <| maximum 100 fill]
                 {
-                    src = "spinner.jpg"
+                    src = "assets/spinner.jpg"
                     , description = "Loading..."
                 }
         ]
     ]
+
+
+
+

@@ -4,7 +4,7 @@ import Browser exposing (Document, UrlRequest)
 import Element exposing (fill, height, layout, width)
 import Browser.Navigation as Nav
 import Json.Decode
-import Messages exposing (MainPageMessage(..), Message(..))
+import Messages.Messages as Messages exposing (MainPageMessage(..), Message(..))
 import Pages.FromJson.MainPage as MP
 import Pages.MainPage as MP
 import Pages.PagesModels.MainPageModel as MPM

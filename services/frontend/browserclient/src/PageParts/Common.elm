@@ -2,7 +2,7 @@ module PageParts.Common exposing (ElementEvent, onClick, toAttribute)
 
 import Element exposing (Attribute)
 import Element.Events
-import Messages exposing (Message)
+import Messages.Messages exposing (Message)
 
 
 

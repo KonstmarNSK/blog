@@ -11,9 +11,8 @@ import Pages.FromJson.ViewPost as VP
 --      READ DATA FROM FLAGS
 
 type alias MainPageInitParams = {
-       baseUrl: String
-      ,createPostPageUrl: String
-      ,viewAllPostsPageUrl: String
+       apiUrlPrefix: String,
+       pageUrlPrefix: String
     }
 
 
@@ -27,9 +26,8 @@ type SubpageInitParams =
 getDataFromFlags: Decoder MainPageInitParams
 getDataFromFlags =
     Decode.succeed MainPageInitParams
-        |> required "base-url" Decode.string
-        |> required "create-post-page-url" Decode.string
-        |> required "view-all-posts-page-url" Decode.string
+        |> required "api_root_addr" Decode.string
+        |> required "page_root_addr" Decode.string
 
 
 decodeSubpageData: Decoder SubpageInitParams

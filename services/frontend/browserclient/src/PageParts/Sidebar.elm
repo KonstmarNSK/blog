@@ -3,7 +3,7 @@ module PageParts.Sidebar exposing (sidebar, SidebarLink, SidebarModel)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import Messages exposing (Message)
+import Messages.Messages exposing (Message)
 import PageParts.Common as C
 
 

@@ -2,7 +2,7 @@ module Pages.ViewPost exposing (..)
 
 
 import Element exposing (Element, text)
-import Messages
+import Messages.Messages as Messages
 import Pages.FromJson.ViewPost as ViewPost
 import Pages.PagesModels.ViewPostPageModel exposing (ViewPostPageModel)
 import Url exposing (Url)

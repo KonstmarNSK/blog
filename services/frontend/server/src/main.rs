@@ -14,29 +14,18 @@ const JS_SCRIPT: &'static [u8] = include_bytes!("static/Main-compressed.js");
 
 
 
-struct AppState{
-    the_page: String
-}
-
 // todo: add ssl and authentication via rustls and actix-web-httpauth
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
-    let page : String = PageTemplate{
-            elm_flags: ElmInputFlags {
-                    api_root_addr: "http://localhost:8080/api".to_owned()
-            }
-    }.render_once().unwrap();
-
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(
-                AppState{
-                    the_page: page.clone()
-                }))
+            .service(
+                web::scope("/assets")
+                    .route("/spinner", web::get().to(show_spinner))
+                    .route("/Main-compressed.js", web::get().to(show_js))
+            )
             .service(show_page)
-            .route("/assets/pic", web::get().to(show_pic))
-            .route("/assets/Main-compressed.js", web::get().to(show_js))
     })
         .bind(("127.0.0.1", 8080))?
         .run()
@@ -49,20 +38,31 @@ async fn main() -> std::io::Result<()> {
 // http endpoints
 
 #[get("/")]
-async fn show_page(data: web::Data<AppState>) -> impl Responder {
-    HttpResponse::Ok().body((&data.the_page).to_owned())
+async fn show_page(req: HttpRequest) -> impl Responder {
+    let mut page_root = "".to_owned();
+    page_root.push_str(req.connection_info().scheme());
+    page_root.push_str("://");
+    page_root.push_str(req.connection_info().host());
+
+    let page : String = PageTemplate{
+        elm_flags: ElmInputFlags {
+            api_root_addr: "http://localhost:8080/api".to_owned(),
+            page_root_addr: page_root
+        }
+    }.render_once().unwrap();
+
+    HttpResponse::Ok().body(page)
 }
 
-async fn show_pic() -> impl Responder {
+async fn show_spinner() -> impl Responder {
     HttpResponse::Ok()
-        .append_header(header::ContentType(mime::IMAGE_GIF))
+        .insert_header(header::ContentType(mime::IMAGE_GIF))
         .body(LOADING_SPINNER_BYTES)
 }
 
 async fn show_js() -> impl Responder {
     HttpResponse::Ok()
-
-        .append_header(header::ContentType(mime::APPLICATION_JAVASCRIPT))
+        .insert_header(header::ContentType(mime::APPLICATION_JAVASCRIPT))
         .insert_header(header::ContentEncoding::Gzip)
         .body(JS_SCRIPT)
 }
@@ -80,6 +80,7 @@ struct PageTemplate{
 #[derive(Serialize)]
 struct ElmInputFlags {
     api_root_addr: String,
+    page_root_addr: String,
 }
 
 

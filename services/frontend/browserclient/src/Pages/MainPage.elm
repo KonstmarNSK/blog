@@ -3,18 +3,19 @@ module Pages.MainPage exposing (..)
 import Browser
 import Element exposing (..)
 import Element.Font as Font
-import Http
-import Messages exposing (MainPageMessage(..), Message(..))
+import Messages.Messages exposing (MainPageMessage(..), Message(..))
 import PageParts.Sidebar exposing (sidebar, SidebarModel, SidebarLink)
 import Pages.CreatePost as CP
-import Pages.ViewPost as VP
-import Pages.FromJson.MainPage exposing (MainPageInitParams, SubpageInitParams(..), decodeSubpageData)
-import Pages.PagesModels.MainPageModel as MainPageModel exposing (ActiveSubpage, Error(..), MainPageModel, SubpageModel(..))
+import Pages.HomePage as HP
+import Pages.Loading
+import Pages.PageType as PT exposing (PageType)
+import Pages.FromJson.MainPage exposing (MainPageInitParams, SubpageInitParams(..))
+import Pages.PagesModels.MainPageModel exposing (..)--(ActiveSubpage, AlreadyLoadedPage, AlreadyLoadedPages(..), Error(..), MainPageModel, PageUrl(..), SubpageModel(..), pageUrlIntoUrl)
 import Pages.PagesModels.LoadingPageModel as L
-import Pages.Loading as L
 import Pages.Link as Lnk
-import Pages.SubpageUrl exposing (SubpageUrl)
 import Url exposing (Url)
+import Pages.ShowAllPosts as SA
+import Pages.NotFoundPage as NF
 
 
 
@@ -25,28 +26,179 @@ import Url exposing (Url)
 initModel: MainPageInitParams -> Url -> Result Error (MainPageModel, Cmd Message)
 initModel mainPageInitParams url =
     let
-        absoluteUrl: String -> String
-        absoluteUrl relative =
-            mainPageInitParams.baseUrl ++ "/" ++ relative
+        pageUrlPrefix = Lnk.PageRootPrefix mainPageInitParams.pageUrlPrefix
+        apiUrlPrefix = Lnk.ApiRootPrefix mainPageInitParams.apiUrlPrefix
 
-        pagesUrls =
-                    {
-                        createPostPageUrl = absoluteUrl mainPageInitParams.createPostPageUrl
-                       ,viewAllPostsPageUrl = absoluteUrl mainPageInitParams.viewAllPostsPageUrl
-                    }
+        pagesLinks =
+            List.filterMap
+                (\maybe -> maybe)
+                [
+                    CP.getPageLink pageUrlPrefix <| (Lnk.LinkText "Create page"),
+                    SA.getPageLink pageUrlPrefix <| (Lnk.LinkText "Show all posts")
+                ]
+
+        (activePage, cmd) = loadPage url (Lnk.ApiRootPrefix mainPageInitParams.apiUrlPrefix) EmptyAlreadyLoadedPages
+
     in
-    Ok <| ( MainPageModel [
-            -- todo: once server starts sending localized strings, remove hardcoded link text (fix deserializer)
-            Lnk.Link pagesUrls.createPostPageUrl "Create post" Lnk.CreatePost,
-            Lnk.Link pagesUrls.viewAllPostsPageUrl "View all posts" Lnk.ViewAllPosts
-        ]
-        "Nothing clicked"
-        []
-        (ActiveSubpage url HomePageModel)
-        pagesUrls
+        Ok <| ( MainPageModel
+                    pagesLinks
+                    EmptyAlreadyLoadedPages
+                    activePage
+                    apiUrlPrefix
+                    pageUrlPrefix
+            , cmd
+           )
 
-        , Cmd.none
-       )
+
+
+-- figures out what page type given url corresponds to,
+-- then tries to get that page data from already loaded pages data and if there is nothing loaded, tries to load
+loadPage: Url -> Lnk.ApiRootPrefix-> AlreadyLoadedPages -> (ActiveSubpage, Cmd Message)
+loadPage url apiPrefix alreadyLoadedPages =
+    let
+        -- first, check what type of pages given url corresponds to
+        pageType =
+            case determinePageType url of
+                Just pt -> pt
+                Nothing -> PT.NotFound404
+
+        pageUrl = PageUrl pageType url
+
+        -- we try to find specified url in inactive already loaded pages
+        findAlreadyLoaded: AlreadyLoadedPages -> List AlreadyLoadedPage
+        findAlreadyLoaded alreadyLoaded =
+            case alreadyLoaded of
+               AlreadyLoadedPages alreadyLoadedPagesData ->
+                    List.filter (\page ->
+                            case page of
+                                AlreadyLoadedPage pgData ->
+                                    -- if we found loaded page with same type, check if url is same as requested
+                                    case pgData.pageType == pageType of
+                                        False -> False
+                                        True -> isSameUrl pageUrl pgData.url
+                            ) alreadyLoadedPagesData.alreadyLoadedPages
+
+               EmptyAlreadyLoadedPages -> []
+
+
+        intoActivePage: (AlreadyLoadedPage, Cmd Message) -> (ActiveSubpage, Cmd Message)
+        intoActivePage (alreadyLoadedPage, cmd) = (ActiveSubpage alreadyLoadedPage, cmd)
+
+    in
+        case alreadyLoadedPages of
+           AlreadyLoadedPages alreadyLoadedPagesData ->
+                case isActivePage pageUrl alreadyLoadedPagesData.activeSubpage of
+                    True -> (alreadyLoadedPagesData.activeSubpage, Cmd.none)  -- page with given url is already active, do nothing
+                    False ->
+                        case findAlreadyLoaded alreadyLoadedPages of
+                            [item] -> (ActiveSubpage item, Cmd.none)  -- page with given url is already loaded, just make it active
+                            _ -> intoActivePage <| loadPage2 pageUrl apiPrefix   -- load page data
+
+           EmptyAlreadyLoadedPages -> intoActivePage <| loadPage2 pageUrl apiPrefix
+
+
+
+
+
+-- actually tries to load page data. Todo: rename
+loadPage2: PageUrl PageType -> Lnk.ApiRootPrefix-> (AlreadyLoadedPage, Cmd Message)
+loadPage2 url apiPrefix =
+    let
+        -- todo: rename
+        exactPageOrLoading: Maybe SubpageModel -> SubpageModel
+        exactPageOrLoading maybeLoaded =
+            case maybeLoaded of
+                Nothing -> LoadingPageModel loadingPage
+                Just loaded -> loaded
+
+
+
+        loadingPage = L.LoadingPageModel
+
+    in
+    case url of                  -- fixme: version number must be passed as an argument from model, remove hardcoded 0
+        PageUrl PT.CreatePost _ -> case CP.loadPage apiPrefix 0 of
+                                    (loadedPage, command) ->
+                                        (
+                                            AlreadyLoadedPage {
+                                                pageType = PT.CreatePost,
+                                                url = url,
+                                                pageModel = exactPageOrLoading <| Maybe.map CreatePostModel loadedPage
+                                            }
+                                            , command
+                                        )
+
+        PageUrl PT.Home _ -> (
+                               AlreadyLoadedPage {
+                                   pageType = PT.Home,
+                                   url = url,
+                                   pageModel = HomePageModel
+                               }
+                              , Cmd.none
+                           )
+        _ -> (
+                AlreadyLoadedPage {
+                    pageType = PT.Home,
+                    url = url,
+                    pageModel = HomePageModel
+                }
+               , Cmd.none
+            )
+        --PageUrl PT.ViewAllPosts ->
+        --PageUrl PT.NotFound404 ->
+        --PageUrl PT.Loading ->
+
+
+setPageActive: Url -> MainPageModel -> (MainPageModel, Cmd Message)
+setPageActive url mainPageModel =
+    let
+      --loadPage: Url -> Lnk.ApiRootPrefix-> AlreadyLoadedPages -> (ActiveSubpage, Cmd Message)
+      (activePage, cmd) = loadPage url mainPageModel.apiUrlPrefix mainPageModel.alreadyLoadedPages
+    in
+      ({ mainPageModel | activeSubpage = activePage}, cmd)
+
+
+
+-- whether given url matches one that active subpage has
+isActivePage: PageUrl PageType -> ActiveSubpage -> Bool
+isActivePage url activeSubpage =
+    case activeSubpage of
+        ActiveSubpage alreadyLoaded ->
+            case alreadyLoaded of
+                AlreadyLoadedPage alreadyLoadedData ->
+                    isSameUrl alreadyLoadedData.url url
+
+
+
+
+isSameUrl: PageUrl PageType -> PageUrl PageType -> Bool
+isSameUrl url url2 =
+    case url of
+        PageUrl PT.CreatePost u -> CP.isSamePage u (pageUrlIntoUrl url2)
+        PageUrl PT.ViewAllPosts u -> SA.isSamePage u (pageUrlIntoUrl url2)
+        PageUrl PT.Home u ->  HP.isSamePage u (pageUrlIntoUrl url2)
+        PageUrl PT.NotFound404 u -> NF.isSamePage u (pageUrlIntoUrl url2)
+        PageUrl PT.Loading _ -> False
+
+
+
+
+determinePageType: Url -> Maybe PageType
+determinePageType url =
+    let
+        matchers: List (Url -> Maybe PageType)
+        matchers =
+            [
+                CP.determinePageType,
+                SA.determinePageType,
+                HP.determinePageType
+            ]
+
+    in
+        case List.filterMap (\matcher -> matcher url) matchers of
+            -- todo: properly handle case when we have multiple items in list, i.e. given url matches several page types
+            [item] -> Just item
+            _ -> Nothing
 
 
 
@@ -60,96 +212,13 @@ update mainPageModel message =
             LinkClicked url ->
                 case Debug.log "Clicked url: " url of
                     Browser.Internal href ->
-                        case intoPageUrl href mainPageModel of
-                            Nothing -> (mainPageModel, Cmd.none)    -- fixme: don't ignore.
-                            Just pageUrl ->
-                                case viewUrl pageUrl mainPageModel of
-                                    Ok (activeSubpage, cmd) ->
-                                        ({mainPageModel | activeSubpage = activeSubpage}, cmd)
-
-                                    -- fixme: don't ignore
-                                    Err e -> (Debug.log ("Err: " ++ MainPageModel.errToString e) mainPageModel, Cmd.none)
+                        setPageActive href mainPageModel
 
                     Browser.External href ->
-                        ({mainPageModel | text = "Clicked url: " ++ href}, Cmd.none)
-
-            GotPageInfo url response ->
-                processGotPageInfoMsg url response mainPageModel
+                        (mainPageModel, Cmd.none)
 
             _ -> (mainPageModel, Cmd.none)
 
-
-
-processGotPageInfoMsg: SubpageUrl -> Result Http.Error Pages.FromJson.MainPage.SubpageInitParams -> MainPageModel -> (MainPageModel, Cmd Message)
-processGotPageInfoMsg url response mpModel =
-    -- todo: create type Page and process all pages identically
-    -- find out which page the response corresponds to
-    case Debug.log "matching page type" url.pageType of
-        Lnk.CreatePost ->       -- todo: make a distinct function for this
-            case Debug.log "checking url" CP.isSamePage mpModel.activeSubpage.url url.url of
-                True -> (Debug.log "Same url" mpModel, Cmd.none) -- page is already shown
-
-                False -> -- init new Create post page and put its model into MPModel
-                    case Debug.log "resp" response of
-                        Err _ -> (Debug.log ("Error loading page: ") mpModel, Cmd.none)  -- fixme: don't ignore
-                        Ok initParams ->
-                            case Debug.log "Init pampams" initParams of
-                                -- fixme: page type checks twice
-                                CreatePostPageInitParams pampams ->
-                                    let
-                                        cpModel = CP.initModel pampams
-                                        newActivePage = case cpModel of
-                                                            Ok val -> Ok <| ActiveSubpage url.url (CreatePostModel val)
-                                                            Err e -> Err e   -- fixme: don't ignore
-                                    in
-                                    case newActivePage of
-                                        Ok val ->
-                                            ({mpModel | activeSubpage = Debug.log "Active subpage is cp now" val}, Cmd.none)  -- todo: put newly loaded page into mpModel.alreadyLoadedPages
-                                        Err e -> (Debug.log "E1" mpModel, Cmd.none)        -- fixme: don't ignore
-
-                                _ -> (Debug.log ("Error loading page: ") mpModel, Cmd.none)  -- fixme: don't ignore
-
-        Lnk.ViewAllPosts ->
-            case VP.isSamePage url.url mpModel.activeSubpage.url of
-                True -> (mpModel, Cmd.none) -- page is already shown
-                False ->
-                     case Debug.log "checking resp" response of
-                        Err _ -> (Debug.log ("Error loading page: ") mpModel, Cmd.none)  -- fixme: don't ignore
-                        Ok initParams ->
-                            case initParams of
-                                ViewPostPageInitParams pampams ->
-                                    let
-                                        vpModel = VP.initModel pampams
-                                        newActivePage = case vpModel of
-                                            Ok val -> Ok <| ActiveSubpage url.url (ViewPostModel val)
-                                            Err e -> Err e   -- fixme: don't ignore
-                                    in
-                                    case newActivePage of
-                                        Ok val ->
-                                            ({mpModel | activeSubpage = Debug.log "Active subpage is vp now" val}, Cmd.none)  -- todo: put newly loaded page into mpModel.alreadyLoadedPages
-                                        Err e -> (Debug.log "E2" mpModel, Cmd.none)                     -- fixme: don't ignore
-
-                                _ -> (Debug.log ("Error loading page 1: ") mpModel, Cmd.none)  -- fixme: don't ignore
-
-
-requestPageParams: SubpageUrl -> Cmd Message
-requestPageParams url =
-    Http.get
-        {
-            url = Url.toString url.url
-          , expect = Http.expectJson (\result -> Messages.MPMessage <| Messages.GotPageInfo url result) decodeSubpageData
-        }
-
-
-intoPageUrl: Url -> MainPageModel -> Maybe SubpageUrl
-intoPageUrl url model =
-    let
-        strUrl = Debug.log "Trying to match url: " <| Url.toString url
-    in
-
-    if (String.startsWith model.subpagesUrls.createPostPageUrl strUrl) then Just <| SubpageUrl Lnk.CreatePost url else
-    if (String.startsWith model.subpagesUrls.viewAllPostsPageUrl strUrl) then Just <| SubpageUrl Lnk.ViewAllPosts url else
-        Nothing
 
 
 --      VIEW
@@ -158,47 +227,24 @@ intoPageUrl url model =
 view: MainPageModel -> Element Message
 view model =
     let
-
         collectSidebarItems =
-           List.map (\item -> SidebarLink item.url item.text []) model.sidebarLinks
-
+           List.map (\item -> SidebarLink (Url.toString item.url) item.text []) model.sidebarLinks
 
         sidebarModel =
            SidebarModel collectSidebarItems
+
+        subpageToDraw =
+           case model.activeSubpage of
+               ActiveSubpage alreadyLoaded ->
+                   case alreadyLoaded of
+                       AlreadyLoadedPage data -> data.pageModel
 
     in
     row [ width <| minimum 600 fill, height fill, Font.size 16 ]
                     [
                         sidebar sidebarModel
-                       ,viewSubpage model.activeSubpage.subpageModel
+                       ,viewSubpage subpageToDraw
                     ]
-
-
-
-
-viewUrl: SubpageUrl -> MainPageModel -> Result Error (ActiveSubpage, Cmd Message)
-viewUrl url model =
-    let
-        loadingPageCrutch = case Url.fromString ((Url.toString url.url) ++ "loading-mock") of
-            Just val -> val
-            Nothing -> url.url
-    in
-    case List.filter (\li -> li.url == Url.toString (Debug.log "Called viewUrl with " url.url)) model.alreadyLoadedPages of
-        [] -> Ok (ActiveSubpage loadingPageCrutch (LoadingPageModel L.defaultPageModel), requestPageParams <| Debug.log "Loading url: " url)
-        [item] -> Ok ((ActiveSubpage (Debug.log "Already existing loaded page: " url.url) item.pgModel), Cmd.none)
-
-        _ -> Err <| SeveralPagesWithSameUrl <| Url.toString <| Debug.log "Err: " url.url
-
-
-
-viewLoadingPage: L.LoadingPageModel -> Element Message
-viewLoadingPage m =
-    L.view m
-
-
-viewHomepage: Element Message
-viewHomepage =
-    (text "Me home!")
 
 
 
@@ -206,9 +252,8 @@ viewSubpage: SubpageModel -> Element Message
 viewSubpage subpageModel =
     case subpageModel of
         CreatePostModel m -> CP.view m
-        LoadingPageModel m -> viewLoadingPage m
-        HomePageModel -> viewHomepage
-        ViewPostModel m -> VP.view m
+        LoadingPageModel m -> Pages.Loading.view m
+        HomePageModel -> HP.view
         _ -> (text "Unknown page!")
 
 
