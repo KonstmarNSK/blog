@@ -8,5 +8,4 @@ type CreatePostPageMessage =
 
 
 type ReqResult =
-    -- todo: replace Int with type PageVersion
-    CsrfTokenReqResult Int String
+    CsrfTokenReqResult String

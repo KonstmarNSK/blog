@@ -5,6 +5,7 @@ import Browser exposing (UrlRequest)
 import Http
 import Messages.CreatePostPageMessages as CPMessages
 import Url exposing (Url)
+import Pages.ActivePageVersion as PageVer
 
 
 type Message =
@@ -13,7 +14,7 @@ type Message =
 type MainPageMessage =
     LinkClicked UrlRequest
     | UrlChanged Url
-    | GotHttpRequestResult (Result Http.Error RequestResult)
+    | GotPageInfoRequestResult PageVer.ActivePageVersion (Result Http.Error RequestResult)
 
 
 type RequestResult =

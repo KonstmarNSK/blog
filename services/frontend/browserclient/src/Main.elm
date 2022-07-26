@@ -26,6 +26,7 @@ main =
     }
 
 
+
 init : Json.Decode.Value -> Url.Url -> Nav.Key -> (Model.Model, Cmd Message)
 init flags url _ =
     let
@@ -42,7 +43,6 @@ init flags url _ =
 
 
 
--- UPDATE
 
 
 update : Message -> Model.Model -> (Model.Model, Cmd Message)
@@ -61,7 +61,6 @@ update msg model =
 
 
 
--- SUBSCRIPTIONS
 
 
 subscriptions : Model.Model -> Sub Message
@@ -71,9 +70,6 @@ subscriptions _ =
 
 
 
-
-
--- VIEW
 
 
 view : Model.Model -> Document Message

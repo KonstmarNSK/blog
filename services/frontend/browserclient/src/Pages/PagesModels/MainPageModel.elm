@@ -6,6 +6,7 @@ import Pages.PagesModels.LoadingPageModel as L
 import Pages.PagesModels.ViewPostPageModel exposing (ViewPostPageModel)
 import Url exposing (Url)
 import Pages.PageType as PT
+import Pages.ActivePageVersion as PageVer
 
 
 
@@ -19,7 +20,7 @@ type alias MainPageModel = {
 
 
 
-type ActiveSubpage = ActiveSubpage AlreadyLoadedPage
+type ActiveSubpage = ActiveSubpage { page:  AlreadyLoadedPage, version: PageVer.ActivePageVersion }
 
 type AlreadyLoadedPages =
     AlreadyLoadedPages { activeSubpage: ActiveSubpage, alreadyLoadedPages: List AlreadyLoadedPage}

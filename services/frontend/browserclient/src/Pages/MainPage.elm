@@ -5,12 +5,13 @@ import Element exposing (..)
 import Element.Font as Font
 import Messages.Messages exposing (MainPageMessage(..), Message(..))
 import PageParts.Sidebar exposing (sidebar, SidebarModel, SidebarLink)
+import Pages.ActivePageVersion as PageVer
 import Pages.CreatePost as CP
 import Pages.HomePage as HP
 import Pages.Loading
 import Pages.PageType as PT exposing (PageType)
 import Pages.FromJson.MainPage exposing (MainPageInitParams, SubpageInitParams(..))
-import Pages.PagesModels.MainPageModel exposing (..)--(ActiveSubpage, AlreadyLoadedPage, AlreadyLoadedPages(..), Error(..), MainPageModel, PageUrl(..), SubpageModel(..), pageUrlIntoUrl)
+import Pages.PagesModels.MainPageModel exposing (..)
 import Pages.PagesModels.LoadingPageModel as L
 import Pages.Link as Lnk
 import Url exposing (Url)
@@ -18,9 +19,6 @@ import Pages.ShowAllPosts as SA
 import Pages.NotFoundPage as NF
 
 
-
-
---      INIT
 
 
 initModel: MainPageInitParams -> Url -> Result Error (MainPageModel, Cmd Message)
@@ -62,9 +60,19 @@ loadPage url apiPrefix alreadyLoadedPages =
                 Just pt -> pt
                 Nothing -> PT.NotFound404
 
+
         pageUrl = PageUrl pageType url
 
-        -- we try to find specified url in inactive already loaded pages
+        -- get active page version
+        activePageVersion = case alreadyLoadedPages of
+            AlreadyLoadedPages data ->
+                case data.activeSubpage of
+                    ActiveSubpage asData -> asData.version
+
+            EmptyAlreadyLoadedPages -> PageVer.ident
+
+
+        -- try to find specified url in inactive already loaded pages
         findAlreadyLoaded: AlreadyLoadedPages -> List AlreadyLoadedPage
         findAlreadyLoaded alreadyLoaded =
             case alreadyLoaded of
@@ -82,7 +90,8 @@ loadPage url apiPrefix alreadyLoadedPages =
 
 
         intoActivePage: (AlreadyLoadedPage, Cmd Message) -> (ActiveSubpage, Cmd Message)
-        intoActivePage (alreadyLoadedPage, cmd) = (ActiveSubpage alreadyLoadedPage, cmd)
+        intoActivePage (alreadyLoadedPage, cmd) =
+                (ActiveSubpage { page = alreadyLoadedPage, version =  activePageVersion }, cmd)
 
     in
         case alreadyLoadedPages of
@@ -91,18 +100,19 @@ loadPage url apiPrefix alreadyLoadedPages =
                     True -> (alreadyLoadedPagesData.activeSubpage, Cmd.none)  -- page with given url is already active, do nothing
                     False ->
                         case findAlreadyLoaded alreadyLoadedPages of
-                            [item] -> (ActiveSubpage item, Cmd.none)  -- page with given url is already loaded, just make it active
-                            _ -> intoActivePage <| loadPage2 pageUrl apiPrefix   -- load page data
+                            -- page with given url is already loaded, just make it active
+                            [page] -> (ActiveSubpage { page = page, version = activePageVersion}, Cmd.none)
+                            _ -> intoActivePage <| loadPage2 pageUrl apiPrefix activePageVersion   -- load page data
 
-           EmptyAlreadyLoadedPages -> intoActivePage <| loadPage2 pageUrl apiPrefix
+           EmptyAlreadyLoadedPages -> intoActivePage <| loadPage2 pageUrl apiPrefix activePageVersion
 
 
 
 
 
 -- actually tries to load page data. Todo: rename
-loadPage2: PageUrl PageType -> Lnk.ApiRootPrefix-> (AlreadyLoadedPage, Cmd Message)
-loadPage2 url apiPrefix =
+loadPage2: PageUrl PageType -> Lnk.ApiRootPrefix -> PageVer.ActivePageVersion -> (AlreadyLoadedPage, Cmd Message)
+loadPage2 url apiPrefix activePageVersion =
     let
         -- todo: rename
         exactPageOrLoading: Maybe SubpageModel -> SubpageModel
@@ -112,21 +122,24 @@ loadPage2 url apiPrefix =
                 Just loaded -> loaded
 
 
-
         loadingPage = L.LoadingPageModel
 
     in
-    case url of                  -- fixme: version number must be passed as an argument from model, remove hardcoded 0
-        PageUrl PT.CreatePost _ -> case CP.loadPage apiPrefix 0 of
-                                    (loadedPage, command) ->
-                                        (
-                                            AlreadyLoadedPage {
-                                                pageType = PT.CreatePost,
-                                                url = url,
-                                                pageModel = exactPageOrLoading <| Maybe.map CreatePostModel loadedPage
-                                            }
-                                            , command
-                                        )
+    case url of
+        PageUrl PT.CreatePost _ ->
+            case CP.loadPage apiPrefix of
+                (loadedPage, command) ->
+                    (
+                        AlreadyLoadedPage {
+                            pageType = PT.CreatePost,
+                            url = url,
+                            pageModel = exactPageOrLoading <| Maybe.map CreatePostModel loadedPage
+                        }
+
+                        , (command (\response ->
+                                        -- here we remember active page version at the moment of http request sending
+                                        MPMessage <| GotPageInfoRequestResult activePageVersion response ))
+                    )
 
         PageUrl PT.Home _ -> (
                                AlreadyLoadedPage {
@@ -164,7 +177,7 @@ isActivePage: PageUrl PageType -> ActiveSubpage -> Bool
 isActivePage url activeSubpage =
     case activeSubpage of
         ActiveSubpage alreadyLoaded ->
-            case alreadyLoaded of
+            case alreadyLoaded.page of
                 AlreadyLoadedPage alreadyLoadedData ->
                     isSameUrl alreadyLoadedData.url url
 
@@ -236,7 +249,7 @@ view model =
         subpageToDraw =
            case model.activeSubpage of
                ActiveSubpage alreadyLoaded ->
-                   case alreadyLoaded of
+                   case alreadyLoaded.page of
                        AlreadyLoadedPage data -> data.pageModel
 
     in

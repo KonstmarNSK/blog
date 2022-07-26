@@ -1,6 +1,7 @@
 module Pages.CreatePost exposing (..)
 
 import Element exposing (..)
+import Http
 import Messages.Messages as Messages exposing (RequestResult(..))
 import Messages.CreatePostPageMessages exposing (ReqResult(..))
 import Pages.FromJson.CreatePostPage exposing (PageInitParams)
@@ -36,12 +37,12 @@ isSamePage: Url -> Url -> Bool
 isSamePage url1 url2 = url1 == url2
 
 
--- todo: make type PageVersion instead of Int
-loadPage: Link.ApiRootPrefix -> Int -> (Maybe PostCreationPageModel, Cmd Messages.Message)
-loadPage apiPrefix pageVersion =
+
+loadPage: Link.ApiRootPrefix -> (Maybe PostCreationPageModel, (ReqCommon.RequestMessageMapper -> Cmd Messages.Message))
+loadPage apiPrefix =
     (
         Nothing,
-        ReqCommon.getCsrfToken apiPrefix (\response -> CreatePostReqResult <| CsrfTokenReqResult pageVersion response )
+        ReqCommon.getCsrfToken apiPrefix (\response -> CreatePostReqResult <| CsrfTokenReqResult response )
     )
 
 
