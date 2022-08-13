@@ -1,12 +1,20 @@
 module Pages.HttpRequests.Urls exposing (..)
 
 
--- todo use Url type instead of String
+import Url exposing (Url)
+import Pages.Link as Lnk
 
 
-loadingPageSpinnerImgUrl: String
-loadingPageSpinnerImgUrl = "assets/spinner.jpg"
 
 
-csrfTokenGetUrl: String
-csrfTokenGetUrl = "/get-csrf-token"
+loadingPageSpinnerImgUrl: Lnk.PageRootPrefix -> Maybe Url
+loadingPageSpinnerImgUrl pageUrlPrefix =
+    case pageUrlPrefix of
+        Lnk.PageRootPrefix str -> Url.fromString (str ++ "assets/spinner.jpg")
+
+
+
+csrfTokenGetUrl: Lnk.ApiRootPrefix -> Maybe Url
+csrfTokenGetUrl apiUrlPrefix =
+    case apiUrlPrefix of
+        Lnk.ApiRootPrefix str -> Url.fromString (str ++ "/get-csrf-token")

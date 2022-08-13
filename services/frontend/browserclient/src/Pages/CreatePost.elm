@@ -4,12 +4,15 @@ import Element exposing (..)
 import Http
 import Messages.Messages as Messages exposing (RequestResult(..))
 import Messages.CreatePostPageMessages exposing (ReqResult(..))
+import Pages.Csrf
 import Pages.FromJson.CreatePostPage exposing (PageInitParams)
 import Pages.HttpRequests.Common as ReqCommon
+import Pages.HttpRequests.Urls as ReqUrls
 import Pages.Link as Link exposing (Link)
 import Pages.PageType
 import Url exposing (Url)
 import Pages.PagesModels.CreatePostPageModel exposing (PostCreationPageModel)
+import Pages.PageLoadingContext as PLC
 
 
 
@@ -38,12 +41,39 @@ isSamePage url1 url2 = url1 == url2
 
 
 
-loadPage: Link.ApiRootPrefix -> (Maybe PostCreationPageModel, (ReqCommon.RequestMessageMapper -> Cmd Messages.Message))
+type PagePartLoadedMsg =
+    PageLoadedMsg (Result Http.Error Pages.Csrf.CsrfToken)
+
+
+
+loadPage: Link.ApiRootPrefix -> Result String (
+                                        Maybe PostCreationPageModel,
+                                        PLC.PageLoadingRequest PagePartLoadedMsg String PostCreationPageModel
+                                    )
 loadPage apiPrefix =
-    (
-        Nothing,
-        ReqCommon.getCsrfToken apiPrefix (\response -> CreatePostReqResult <| CsrfTokenReqResult response )
-    )
+    let
+        reqUrl = (ReqUrls.csrfTokenGetUrl apiPrefix)
+        req = Maybe.map (\url -> ReqCommon.HttpRequest url (ReqCommon.HttpGetWithParams ReqCommon.EmptyQueryParams)) reqUrl
+
+        apiPrefixStr = case apiPrefix of
+                Link.ApiRootPrefix s -> s
+
+        pageLoadRequest: ReqCommon.HttpRequest -> PLC.PageLoadingRequest PagePartLoadedMsg String PostCreationPageModel
+        pageLoadRequest request =
+                PLC.PageLoadingRequest (
+                    [(request, Http.expectString (\token -> PageLoadedMsg (Result.map (\ok -> Pages.Csrf.CsrfToken ok) token)))],
+                    (PLC.CreatePostPageLoadingContext PLC.PendingPart),
+                    (\msg ctx -> PLC.LoadedPage (Ok (PostCreationPageModel "a")))
+                )
+
+    in
+    case req of
+        Nothing -> Err ("Couldn't create request with api prefix " ++ apiPrefixStr)
+        Just request ->
+            Ok (
+                Nothing,
+                pageLoadRequest request
+            )
 
 
 

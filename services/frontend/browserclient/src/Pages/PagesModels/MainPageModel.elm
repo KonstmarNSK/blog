@@ -1,5 +1,6 @@
 module Pages.PagesModels.MainPageModel exposing (..)
 
+import Dict exposing (Dict)
 import Pages.Link exposing (Link)
 import Pages.PagesModels.CreatePostPageModel exposing (PostCreationPageModel)
 import Pages.PagesModels.LoadingPageModel as L
@@ -7,6 +8,7 @@ import Pages.PagesModels.ViewPostPageModel exposing (ViewPostPageModel)
 import Url exposing (Url)
 import Pages.PageType as PT
 import Pages.ActivePageVersion as PageVer
+import Pages.PageLoadingContext as PLC
 
 
 
@@ -16,6 +18,8 @@ type alias MainPageModel = {
        ,activeSubpage: ActiveSubpage
        ,apiUrlPrefix: Pages.Link.ApiRootPrefix
        ,pageRootPrefix: Pages.Link.PageRootPrefix
+       ,loadingPageContexts: Dict PLC.PageLoadingContextId PLC.PageLoadingContext
+       ,nextPageLoadingContextId: PLC.PageLoadingContextId
     }
 
 

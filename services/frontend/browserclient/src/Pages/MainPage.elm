@@ -1,6 +1,7 @@
 module Pages.MainPage exposing (..)
 
 import Browser
+import Dict
 import Element exposing (..)
 import Element.Font as Font
 import Messages.Messages exposing (MainPageMessage(..), Message(..))
@@ -9,6 +10,7 @@ import Pages.ActivePageVersion as PageVer
 import Pages.CreatePost as CP
 import Pages.HomePage as HP
 import Pages.Loading
+import Pages.PageLoadingContext as PLC
 import Pages.PageType as PT exposing (PageType)
 import Pages.FromJson.MainPage exposing (MainPageInitParams, SubpageInitParams(..))
 import Pages.PagesModels.MainPageModel exposing (..)
@@ -44,6 +46,8 @@ initModel mainPageInitParams url =
                     activePage
                     apiUrlPrefix
                     pageUrlPrefix
+                    Dict.empty
+                    (PLC.PageLoadingContextId 0)
             , cmd
            )
 
@@ -128,18 +132,28 @@ loadPage2 url apiPrefix activePageVersion =
     case url of
         PageUrl PT.CreatePost _ ->
             case CP.loadPage apiPrefix of
-                (loadedPage, command) ->
+                Ok (loadedPage, command) ->
                     (
                         AlreadyLoadedPage {
                             pageType = PT.CreatePost,
                             url = url,
                             pageModel = exactPageOrLoading <| Maybe.map CreatePostModel loadedPage
                         }
-
-                        , (command (\response ->
-                                        -- here we remember active page version at the moment of http request sending
-                                        MPMessage <| GotPageInfoRequestResult activePageVersion response ))
+                        ,
+                        Cmd.none
+                        --
+                        --, (command (\response ->
+                        --                -- here we remember active page version at the moment of http request sending
+                        --                MPMessage <| GotPageInfoRequestResult activePageVersion response ))
                     )
+                Err str -> (
+                               AlreadyLoadedPage {
+                                   pageType = PT.Home,
+                                   url = url,
+                                   pageModel = HomePageModel
+                               }
+                              , Cmd.none
+                           )
 
         PageUrl PT.Home _ -> (
                                AlreadyLoadedPage {

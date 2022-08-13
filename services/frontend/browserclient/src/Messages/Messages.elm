@@ -6,6 +6,7 @@ import Http
 import Messages.CreatePostPageMessages as CPMessages
 import Url exposing (Url)
 import Pages.ActivePageVersion as PageVer
+import Pages.PageLoadingContext as PLC
 
 
 type Message =
@@ -14,7 +15,7 @@ type Message =
 type MainPageMessage =
     LinkClicked UrlRequest
     | UrlChanged Url
-    | GotPageInfoRequestResult PageVer.ActivePageVersion (Result Http.Error RequestResult)
+    | GotPageInfoRequestResult PLC.PageLoadingContextId PageVer.ActivePageVersion (Result Http.Error RequestResult)
 
 
 type RequestResult =
