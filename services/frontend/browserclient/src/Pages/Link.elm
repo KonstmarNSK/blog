@@ -1,12 +1,10 @@
 module Pages.Link exposing (..)
 
 import Url exposing (Url)
-import Pages.PageType exposing (..)
 
 type alias Link = {
         url: Url
        ,text: String
-       ,pageType: PageType
     }
 
 

@@ -1,14 +1,10 @@
 module Pages.Loading exposing (..)
 
 import Element exposing (..)
-import Messages.Messages exposing (Message)
-import Pages.PagesModels.LoadingPageModel exposing (LoadingPageModel)
 
 
-
-
-view: LoadingPageModel -> Element Message
-view model =
+view: Element tMsg
+view =
     row [ width fill, centerY, centerX] [
         column [centerY, centerX] [
             row [centerX, padding 20] [text "Loading..."],

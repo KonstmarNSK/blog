@@ -1,9 +1,48 @@
 module Pages.ShowAllPosts exposing (..)
 
 
+import Element exposing (..)
 import Pages.Link as Link exposing (Link)
-import Pages.PageType
 import Url exposing (Url)
+
+
+
+
+
+
+
+type PageMessage =
+    LoadedPart
+
+-- common for all pages of type 'Show all posts'
+type CommonState =
+    CommonState {
+        activePage: Model
+        -- todo: add cache
+    }
+
+initCommonState: CommonState
+initCommonState =
+    CommonState {
+            activePage = Model
+        }
+
+type Model = Model
+
+
+
+view: CommonState -> Element tMsg
+view _ =
+    el [] ( text "Me ShowAll Page!" )
+
+
+loadPage: Url -> (PageMessage -> tMsg) -> CommonState -> (CommonState, Cmd tMsg)
+loadPage url msgMapper commonState =
+    (
+        commonState
+       ,Cmd.none
+    )
+
 
 
 getPageLink: Link.PageRootPrefix -> Link.LinkText -> Maybe Link
@@ -14,20 +53,8 @@ getPageLink apiPrefix text =
 
       url = Url.fromString <| strApiPrefix ++ pathPrefix
     in
-        Maybe.map (\u -> Link u strText Pages.PageType.ViewAllPosts) url
+        Maybe.map (\u -> Link u strText) url
 
 
 pathPrefix: String
 pathPrefix = "view-all-posts"
-
-
-
-determinePageType: Url -> Maybe Pages.PageType.PageType
-determinePageType url =
-        case String.startsWith pathPrefix url.path of
-            True -> Just Pages.PageType.ViewAllPosts
-            False -> Nothing
-
-
-isSamePage: Url -> Url -> Bool
-isSamePage url1 url2 = url1 == url2

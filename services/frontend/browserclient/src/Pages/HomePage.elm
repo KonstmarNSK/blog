@@ -2,21 +2,14 @@ module Pages.HomePage exposing (..)
 
 
 import Element exposing (..)
-import Messages.Messages as Messages
-import Pages.HttpRequests.Common as ReqCommon
 import Pages.Link as Link exposing (Link)
-import Pages.PageType
 import Url exposing (Url)
 
 
+type HomePagesState = HomePagesState
+type PageMessage = PageMsg
 
-
-
-determinePageType: Url -> Maybe Pages.PageType.PageType
-determinePageType url =
-        case url.path == "" of
-            True -> Just Pages.PageType.Home
-            False -> Nothing
+initState = HomePagesState
 
 
 isSamePage: Url -> Url -> Bool
@@ -32,17 +25,36 @@ getPageLink apiPrefix text =
       strText = case text of Link.LinkText s -> s
       strApiPrefix = case apiPrefix of Link.PageRootPrefix s -> s
 
-      url = Url.fromString <| strApiPrefix ++ pathPrefix
+      url = Url.fromString <| strApiPrefix
     in
-        Maybe.map (\u -> Link u strText Pages.PageType.Home) url
+        Maybe.map (\u -> Link u strText ) url
 
 
-pathPrefix: String
-pathPrefix = ""
+loadPage: Url -> (PageMessage -> tMsg) -> HomePagesState -> Maybe (HomePagesState, Cmd tMsg)
+loadPage url msgMapper homePagesState =
+    case isHomepageUrl url of
+        True -> Just (homePagesState, Cmd.none)
+        False -> Nothing
+
+processLoadedPart: PageMessage -> HomePagesState -> Result Error HomePagesState
+processLoadedPart pageMessage commonState =
+    Ok commonState
 
 
+isHomepageUrl: Url -> Bool
+isHomepageUrl url = String.isEmpty url.path
 
-view: Element Messages.Message
-view =
+
+view: HomePagesState -> Element tMsg
+view _ =
     el [] ( text "Me home Page!" )
+
+
+type Error =
+    Error
+
+
+
+
+
 

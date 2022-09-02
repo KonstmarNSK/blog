@@ -1,26 +1,41 @@
 module Pages.ViewPost exposing (..)
 
 
-import Element exposing (Element, text)
-import Messages.Messages as Messages
-import Pages.FromJson.ViewPost as ViewPost
-import Pages.PagesModels.ViewPostPageModel exposing (ViewPostPageModel)
+import Element exposing (..)
 import Url exposing (Url)
 
 
-isSamePage: Url -> Url -> Bool
-isSamePage first second = first == second
 
 
-initModel: ViewPost.ViewPostInitParams -> Result Error ViewPostPageModel
-initModel viewPostInitParams =
-    Ok ViewPostPageModel
+
+type PageMessage =
+    LoadedPart
+
+-- common for all pages of type 'Show all posts'
+type CommonState =
+    CommonState {
+        activePage: Model
+        -- todo: add cache
+    }
+
+initCommonState: CommonState
+initCommonState =
+    CommonState {
+            activePage = Model
+        }
+
+type Model = Model
 
 
-view: ViewPostPageModel -> Element Messages.Message
-view viewPostPageModel =
-    (text "Me View post page!")
+
+view: CommonState -> Element tMsg
+view _ =
+    el [] ( text "Me ViewPost Page!" )
 
 
-type Error =
-    ModelInitError
+loadPage: Url -> (PageMessage -> tMsg) -> CommonState -> (CommonState, Cmd tMsg)
+loadPage url msgMapper commonState =
+    (
+        commonState
+       ,Cmd.none
+    )

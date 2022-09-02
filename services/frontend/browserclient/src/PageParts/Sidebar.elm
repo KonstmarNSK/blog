@@ -3,33 +3,30 @@ module PageParts.Sidebar exposing (sidebar, SidebarLink, SidebarModel)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import Messages.Messages exposing (Message)
-import PageParts.Common as C
 
 
 
 
-
-type alias SidebarLink msgType = {
+type alias SidebarLink = {
        url: String
        ,name: String     -- string that wll appear in the sidebar
-       ,producingEvents: List (C.ElementEvent msgType)  -- events that this entry will produce
+       --,producingEvents: List (C.ElementEvent msgType)  -- events that this entry will produce
     }
 
 
-type alias SidebarModel msg = {
-        entries: List (SidebarLink msg)
+type alias SidebarModel = {
+        entries: List (SidebarLink)
     }
 
 
 
-sidebar: SidebarModel Message -> Element Message
+sidebar: SidebarModel -> Element tMsg
 sidebar model =
     let
-        links: SidebarLink Message-> Element Message
+        links: SidebarLink-> Element tMsg
         links e =
             el
-                ([paddingXY 20 10] ++ List.map C.toAttribute e.producingEvents)
+                ([paddingXY 20 10])
                 (link [] { url = e.url, label = (text e.name)} )
 
     in
